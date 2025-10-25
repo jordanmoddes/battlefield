@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Battlefield — Live HUD</title>
+
+  <!-- TailwindCSS via CDN (no install needed) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="min-h-screen p-6 bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-900 text-white">
+  <div class="max-w-6xl mx-auto">
+    <header class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+      <div>
+        <h1 class="text-3xl font-extrabold">Battlefield — Live HUD</h1>
+        <p class="text-sm text-indigo-200/70">
+          Enter a platform & gamer tag, then press LOAD. Widgets refresh every 60s.
+        </p>
+      </div>
+
+      <form id="controlForm" class="flex gap-3 items-center">
+        <select id="platform" class="rounded-md border-0 px-3 py-2 text-slate-900 font-medium">
+          <option>PC</option>
+          <option>Xbox</option>
+          <option>PS5</option>
+        </select>
+
+        <input id="gamerTag" class="rounded-md px-3 py-2 text-slate-900 min-w-[220px]" value="notJMODsuspended" />
+
+        <button type="button" id="loadBtn"
+          class="inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-indigo-500 hover:bg-indigo-600 text-white font-semibold">
+          LOAD
+        </button>
+      </form>
+    </header>
+
+    <section id="metrics" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <!-- Boxes will populate here -->
+    </section>
+  </div>
+
+  <script>
+    const metrics = [
+      { key: "health", label: "Health" },
+      { key: "armor", label: "Armor" },
+      { key: "ammo", label: "Ammo" },
+      { key: "kills", label: "Kills" },
+      { key: "score", label: "Score" },
+      { key: "objective", label: "Objective" },
+    ];
+
+    const metricContainer = document.getElementById("metrics");
+
+    function randomMetric(key) {
+      if (key === "objective") {
+        const tasks = ["Defend", "Capture", "Escort", "Hold"];
+        return tasks[Math.floor(Math.random() * tasks.length)];
+      }
+      return Math.floor(Math.random() * 100);
+    }
+
+    function renderMetrics() {
+      metricContainer.innerHTML = metrics.map(m => `
+        <div class="bg-white/5 p-4 rounded-2xl shadow-lg border border-white/5">
+          <div class="flex items-center justify-between">
+            <div>
+              <h3 class="text-sm font-medium text-indigo-200">${m.label}</h3>
+              <div class="mt-2 text-2xl font-bold" id="${m.key}">${randomMetric(m.key)}</div>
+            </div>
+          </div>
+          <div class="mt-4 flex items-center justify-between text-xs text-slate-300">
+            <div>Gamer: <span class="ml-1 text-white font-medium" id="gamerTagDisplay">notJMODsuspended</span></div>
+            <div>Status: OK</div>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    document.getElementById("loadBtn").addEventListener("click", () => {
+      const tag = document.getElementById("gamerTag").value;
+      document.getElementById("gamerTagDisplay").textContent = tag;
+      renderMetrics();
+    });
+
+    renderMetrics();
+    setInterval(renderMetrics, 60000);
+  </script>
+</body>
+</html>
