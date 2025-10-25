@@ -2,7 +2,8 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0b1220">
   <title>Battlefield 6 Dashboard</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- html2canvas for Snip -->
@@ -11,15 +12,15 @@
     :root{
       --bf-accent:#ff6a00;
       --bg-overlay: rgba(10,18,32,.90);
-      --card-bg: rgba(255,255,255,.11);    /* a bit more solid */
+      --card-bg: rgba(255,255,255,.11);
       --card-border: rgba(255,255,255,.18);
       --text:#f8fafc;
       --sub:#e5e7eb;
       --title:#93c5fd;
       --nav-bg1: rgba(7,11,20,.75);
       --nav-bg2: rgba(7,11,20,.35);
-      --rank-top:#84cc16;    /* lime-500 */
-      --rank-bottom:#ef4444; /* red-500 */
+      --rank-top:#84cc16;
+      --rank-bottom:#ef4444;
     }
     body.light{
       --bg-overlay: rgba(255,255,255,.55);
@@ -31,25 +32,27 @@
       --nav-bg1: rgba(255,255,255,.8);
       --nav-bg2: rgba(255,255,255,.4);
     }
-    /* Battlefield background + overlay */
     body{
       min-height:100vh; color:var(--text);
       background:
         linear-gradient(180deg, var(--bg-overlay), var(--bg-overlay)),
         url('https://assetsio.gnwcdn.com/battlefield-6-2.jpg?width=690&quality=85&format=jpg&dpr=3&auto=webp') center/cover no-repeat fixed;
       font-family: system-ui,-apple-system,Segoe UI,Roboto,Inter,"Helvetica Neue",Arial,"Noto Sans","Apple Color Emoji","Segoe UI Emoji";
+      -webkit-tap-highlight-color: transparent;
       transition: background-color .2s ease, color .2s ease;
     }
     .card{ background: var(--card-bg); border:1px solid var(--card-border); border-radius:16px; padding:16px }
     .grid-auto{ display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:12px }
     .title{ color:var(--title); font-weight:900; font-size:1.25rem; text-align:center; margin-bottom:.75rem }
-    .radio{ appearance:none; width:18px; height:18px; border:2px solid var(--title); border-radius:9999px; display:inline-block; position:relative }
-    .radio:checked::after{ content:""; position:absolute; inset:3px; border-radius:9999px; background:var(--title) }
-    .chip{ background: var(--card-bg); border:1px solid var(--card-border); padding:.4rem .6rem; border-radius:.6rem }
+    .radio{ appearance:none; width:22px; height:22px; border:2px solid var(--title); border-radius:9999px; display:inline-block; position:relative }
+    .radio:checked::after{ content:""; position:absolute; inset:4px; border-radius:9999px; background:var(--title) }
+    .chip{ background: var(--card-bg); border:1px solid var(--card-border); padding:.5rem .7rem; border-radius:.7rem }
     .btn{
       background:var(--bf-accent); color:#0b0f1a; font-weight:800; letter-spacing:.02em;
-      padding:.75rem 1.25rem; border-radius:9999px; box-shadow:0 8px 24px rgba(255,106,0,.18);
+      padding:.9rem 1.35rem; border-radius:9999px; box-shadow:0 8px 24px rgba(255,106,0,.18);
+      min-width:9rem;
       transition: transform .06s ease, filter .06s ease;
+      touch-action: manipulation;
     }
     .btn:hover{ filter:brightness(1.05); transform:translateY(-1px) }
     .btn:active{ transform:translateY(0) }
@@ -58,7 +61,7 @@
     .nav .brand{ font-weight:900; letter-spacing:.06em }
     .nav .icon-btn{
       background: var(--card-bg); border:1px solid var(--card-border);
-      padding:.45rem .8rem; border-radius:.6rem; font-weight:700; color:var(--text)
+      padding:.55rem .9rem; border-radius:.7rem; font-weight:700; color:var(--text)
     }
     .nav .icon-btn:hover{ background: rgba(255,255,255,.12) }
     .rank-top{ color:var(--rank-top) }
@@ -83,7 +86,9 @@
     <h1 class="text-3xl md:text-4xl font-extrabold tracking-tight" style="color:var(--title)">
       Battlefield 6 Stats Dashboard
     </h1>
-    <p class="text-sm" style="color:var(--sub)">Pick a platform, enter a gamer tag, then hit <b style="color:var(--bf-accent)">LOAD</b>. Auto-refresh every 60s.</p>
+    <p class="text-sm" style="color:var(--sub)">
+      Pick a platform, enter a gamer tag, then hit <b style="color:var(--bf-accent)">LOAD</b>. Auto-refresh every 60s.
+    </p>
   </header>
 
   <!-- Controls -->
@@ -92,18 +97,22 @@
       <!-- Platform radios -->
       <div>
         <div class="text-xs" style="color:var(--sub);">Platform</div>
-        <div class="flex items-center gap-4 mt-1">
-          <label class="flex items-center gap-2 cursor-pointer chip">
-            <input class="radio" type="radio" name="platform" value="PS5"  id="ps5"  />
-            <span class="font-semibold">PS5</span>
+        <div class="flex flex-wrap items-center gap-4 mt-1">
+          <label class="flex items-center gap-2 cursor-pointer chip select-none">
+            <input class="radio" type="radio" name="platform" value="EA"    id="ea"    />
+            <span class="font-semibold">EA</span>
           </label>
-          <label class="flex items-center gap-2 cursor-pointer chip">
-            <input class="radio" type="radio" name="platform" value="Xbox" id="xbox" />
+          <label class="flex items-center gap-2 cursor-pointer chip select-none">
+            <input class="radio" type="radio" name="platform" value="Steam" id="steam" />
+            <span class="font-semibold">Steam</span>
+          </label>
+          <label class="flex items-center gap-2 cursor-pointer chip select-none">
+            <input class="radio" type="radio" name="platform" value="Xbox"  id="xbox"  />
             <span class="font-semibold">Xbox</span>
           </label>
-          <label class="flex items-center gap-2 cursor-pointer chip">
-            <input class="radio" type="radio" name="platform" value="PC"   id="pc"   />
-            <span class="font-semibold">PC</span>
+          <label class="flex items-center gap-2 cursor-pointer chip select-none">
+            <input class="radio" type="radio" name="platform" value="PS5"   id="ps5"   />
+            <span class="font-semibold">PS5</span>
           </label>
         </div>
       </div>
@@ -116,7 +125,7 @@
       <!-- Gamer tag -->
       <div>
         <div class="text-xs" style="color:var(--sub);">Gamer Tag</div>
-        <input id="tag" class="w-full rounded-md px-3 py-2 text-slate-900" placeholder="Enter gamer tag" />
+        <input id="tag" class="w-full rounded-md px-3 py-3 text-slate-900" inputmode="text" autocomplete="off" autocapitalize="none" placeholder="Enter gamer tag" />
       </div>
 
       <!-- Last updated -->
@@ -133,15 +142,15 @@
   </footer>
 
   <script>
-    // ===== set this to your Worker URL =====
-    const API_BASE = "https://YOUR-WORKER-SUBDOMAIN.workers.dev";
-    // =======================================
+    // ===== set this to your Worker URL (must be HTTPS) =====
+    const API_BASE = "https://jmodbattlefield.jmodwork.workers.dev";
+    // =======================================================
     const REFRESH_MS = 60000;
 
     // Theme (default dark)
     const themeBtn = document.getElementById("themeBtn");
-    const saved = localStorage.getItem("bf-theme");
-    if(saved === "light"){ document.body.classList.add("light"); themeBtn.textContent = "Dark"; }
+    const savedTheme = localStorage.getItem("bf-theme");
+    if(savedTheme === "light"){ document.body.classList.add("light"); themeBtn.textContent = "Dark"; }
     themeBtn.addEventListener("click", () => {
       document.body.classList.toggle("light");
       const light = document.body.classList.contains("light");
@@ -153,10 +162,10 @@
     document.getElementById("shareBtn").addEventListener("click", async () => {
       try{ await navigator.clipboard.writeText(location.href);
         const b = document.getElementById("shareBtn"); b.textContent="Copied!"; setTimeout(()=>b.textContent="Share",1200);
-      }catch{ alert("Could not copy. Use the address bar."); }
+      }catch{ alert("Could not copy. Please copy from the address bar."); }
     });
 
-    // Snip
+    // Snip (clipboard on supported; download fallback for iOS)
     document.getElementById("snipBtn").addEventListener("click", async () => {
       try {
         const canvas = await html2canvas(document.body, { useCORS:true, logging:false, windowWidth:document.documentElement.scrollWidth, windowHeight:document.documentElement.scrollHeight });
@@ -177,7 +186,11 @@
     const defaultPlatform = params.get("platform") || "PS5";
 
     const tagEl = document.getElementById("tag"); tagEl.value = defaultTag;
-    document.getElementById({ "PS5":"ps5", "Xbox":"xbox", "PC":"pc" }[defaultPlatform] || "ps5").checked = true;
+
+    const platformMap = { EA:"ea", Steam:"steam", Xbox:"xbox", PS5:"ps5" }; // future provider mapping
+    // check the proper radio
+    const idMap = { EA:"ea", Steam:"steam", Xbox:"xbox", PS5:"ps5" };
+    (document.getElementById(idMap[defaultPlatform]) || document.getElementById("ps5")).checked = true;
 
     const formEl = document.getElementById("controls");
     const updatedEl = document.getElementById("updated");
@@ -321,7 +334,7 @@
         </section>`;
     }
 
-    // (Optional) If you want it to load immediately on first view, uncomment:
+    // (Optional) preload defaults:
     // load(getPlatform(), tagEl.value); startPolling(getPlatform(), tagEl.value);
   </script>
 </body>
