@@ -6,161 +6,189 @@
   <title>Battlefield 6 Dashboard | notJMODsuspended</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    body {
-      background: linear-gradient(to bottom right, #0f172a, #1e293b, #111827);
-      color: #f8fafc;
-      font-family: 'Inter', sans-serif;
-    }
-    .section {
-      background-color: rgba(255, 255, 255, 0.05);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      border-radius: 1rem;
-      padding: 1.5rem;
-      margin-bottom: 1.5rem;
-    }
-    .section h2 {
-      font-size: 1.25rem;
-      font-weight: 700;
-      color: #93c5fd;
-      margin-bottom: .75rem;
-    }
-    .grid-cols-auto {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-      gap: 1rem;
-    }
+    body { background: linear-gradient(135deg,#0f172a,#1f2937 30%,#0b1220); color:#f8fafc }
+    .card { background: rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.08); border-radius:16px; padding:16px }
+    .grid-auto { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:12px }
+    .title { color:#93c5fd; font-weight:800; font-size:1.25rem; margin-bottom:.5rem }
+    .err { background:#7f1d1d; border-color:#fecaca }
   </style>
 </head>
 <body class="p-6">
-  <header class="mb-8 text-center">
-    <h1 class="text-3xl font-extrabold tracking-tight text-blue-400">Battlefield 6 Stats Dashboard</h1>
-    <p class="text-blue-200/80">Live summary for <strong>notJMODsuspended</strong> (PS5)</p>
+  <header class="text-center mb-8">
+    <h1 class="text-3xl font-extrabold text-blue-400">Battlefield 6 Stats Dashboard</h1>
+    <p class="text-blue-200/80">Live summary for <b id="who">notJMODsuspended</b> (<span id="plat">PS5</span>)</p>
   </header>
 
-  <main id="content" class="max-w-6xl mx-auto text-sm"></main>
+  <!-- Controls (optional later: make them editable) -->
+  <div class="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
+    <div class="card">
+      <div class="text-xs text-slate-300 mb-1">Platform</div>
+      <div id="platformView" class="font-semibold">PS5</div>
+    </div>
+    <div class="card">
+      <div class="text-xs text-slate-300 mb-1">Gamer Tag</div>
+      <div id="tagView" class="font-semibold">notJMODsuspended</div>
+    </div>
+    <div class="card">
+      <div class="text-xs text-slate-300 mb-1">Status</div>
+      <div id="status" class="font-semibold">initializing…</div>
+    </div>
+  </div>
+
+  <main id="content" class="max-w-6xl mx-auto text-sm space-y-4"></main>
 
   <footer class="text-center text-xs text-slate-400 mt-10">
-    Data auto-refreshes every 60s • Powered by jmodbattlefield API
+    Data auto-refreshes every 60s • Powered by Cloudflare Worker API
   </footer>
 
   <script>
-    const API_BASE = "https://jmodbattlefield.jmodwork.workers.dev"; // <== EDIT THIS
+    // ========= EDIT THIS TO YOUR WORKER URL =========
+    const API_BASE = "https://jmodbattlefield.jmodwork.workers.dev";
+    // =================================================
     const TAG = "notJMODsuspended";
     const PLATFORM = "PS5";
     const REFRESH_MS = 60000;
 
-    async function loadStats() {
-      const res = await fetch(`${API_BASE}/api/summary?platform=${PLATFORM}&tag=${TAG}`);
-      if (!res.ok) throw new Error("API failed");
-      const data = await res.json();
-      render(data);
+    const statusEl = document.getElementById("status");
+    const whoEl = document.getElementById("who");
+    const platEl = document.getElementById("plat");
+    document.getElementById("platformView").textContent = PLATFORM;
+    document.getElementById("tagView").textContent = TAG;
+
+    async function load() {
+      try {
+        statusEl.textContent = "loading…";
+        const url = `${API_BASE}/api/summary?platform=${encodeURIComponent(PLATFORM)}&tag=${encodeURIComponent(TAG)}`;
+        const res = await fetch(url, { cache: "no-store" });
+        if (!res.ok) throw new Error(`API ${res.status}`);
+        const data = await res.json();
+        render(data);
+        statusEl.textContent = "ok";
+      } catch (e) {
+        statusEl.textContent = "error";
+        renderError(e);
+        console.error(e);
+      }
+    }
+
+    function renderError(e) {
+      const c = document.getElementById("content");
+      c.innerHTML = `
+        <div class="card err">
+          <div class="font-bold mb-1">Couldn’t load data</div>
+          <div class="text-xs">Check API_BASE in index.html and that your Worker is deployed & returning JSON.</div>
+          <div class="text-xs mt-2"><code>${String(e)}</code></div>
+        </div>
+      `;
     }
 
     function render(data) {
+      whoEl.textContent = data.player?.name || TAG;
+      platEl.textContent = data.player?.platform || PLATFORM;
+
+      const o = data.overview || {};
       const c = document.getElementById("content");
       c.innerHTML = "";
 
-      // PLAYER SUMMARY
-      const o = data.overview;
+      // Overview
       c.innerHTML += `
-        <section class="section">
-          <h2>Overview</h2>
-          <div class="grid-cols-auto">
-            <div><b>Kills:</b> ${o.kills} <span class="text-slate-400 text-xs">(${o.killsRank})</span></div>
-            <div><b>Deaths:</b> ${o.deaths}</div>
-            <div><b>Assists:</b> ${o.assists} <span class="text-slate-400 text-xs">(${o.assistsRank})</span></div>
-            <div><b>Revives:</b> ${o.revives} <span class="text-slate-400 text-xs">(${o.revivesRank})</span></div>
-            <div><b>K/D Ratio:</b> ${o.kd}</div>
-            <div><b>Kills/Match:</b> ${o.killsPerMatch}</div>
-            <div><b>Kills/Minute:</b> ${o.killsPerMinute}</div>
-            <div><b>W/L Ratio:</b> ${o.wl} <span class="text-slate-400 text-xs">(${o.wlRank})</span></div>
-            <div><b>Best Class:</b> ${o.bestClass.name}</div>
-            <div><b>Rank:</b> ${o.rank}</div>
-            <div><b>XP:</b> ${o.xp.toLocaleString()}</div>
-            <div><b>Matches:</b> ${o.matches}</div>
+        <section class="card">
+          <div class="title">Overview</div>
+          <div class="grid-auto">
+            <div><b>Kills:</b> ${o.kills ?? "—"} <span class="text-slate-400 text-xs">${o.killsRank ? `(${o.killsRank})` : ""}</span></div>
+            <div><b>Deaths:</b> ${o.deaths ?? "—"}</div>
+            <div><b>Assists:</b> ${o.assists ?? "—"} <span class="text-slate-400 text-xs">${o.assistsRank ? `(${o.assistsRank})` : ""}</span></div>
+            <div><b>Revives:</b> ${o.revives ?? "—"} <span class="text-slate-400 text-xs">${o.revivesRank ? `(${o.revivesRank})` : ""}</span></div>
+            <div><b>K/D:</b> ${o.kd ?? "—"}</div>
+            <div><b>Kills/Match:</b> ${o.killsPerMatch ?? "—"}</div>
+            <div><b>Kills/Minute:</b> ${o.killsPerMinute ?? "—"}</div>
+            <div><b>W/L:</b> ${o.wl ?? "—"} <span class="text-slate-400 text-xs">${o.wlRank ? `(${o.wlRank})` : ""}</span></div>
+            <div><b>Best Class:</b> ${o.bestClass?.name ?? "—"}</div>
+            <div><b>Rank:</b> ${o.rank ?? "—"}</div>
+            <div><b>XP:</b> ${o.xp?.toLocaleString?.() ?? "—"}</div>
+            <div><b>Matches:</b> ${o.matches ?? "—"}</div>
           </div>
         </section>
       `;
 
-      // CLASSES
+      // Classes
       c.innerHTML += `
-        <section class="section">
-          <h2>Classes</h2>
-          <div class="grid-cols-auto">
-            ${data.classes.map(c =>
-              `<div>
-                <b>${c.name}</b><br>
-                ⭐ ${c.stars}<br>
-                Kills: ${c.kills}<br>
-                K/D: ${c.kd}<br>
-                KPM: ${c.kpm}<br>
-                Revives: ${c.revives}<br>
-                Time: ${c.hours} hrs
-              </div>`).join("")}
+        <section class="card">
+          <div class="title">Classes</div>
+          <div class="grid-auto">
+            ${(data.classes || []).map(x => `
+              <div>
+                <b>${x.name}</b><br/>
+                ⭐ ${x.stars} &nbsp; Kills: ${x.kills}<br/>
+                K/D: ${x.kd} &nbsp; KPM: ${x.kpm}<br/>
+                Revives: ${x.revives} &nbsp; Time: ${x.hours} hrs
+              </div>
+            `).join("")}
           </div>
         </section>
       `;
 
-      // MODES
+      // Modes
       c.innerHTML += `
-        <section class="section">
-          <h2>Modes</h2>
-          <div class="grid-cols-auto">
-            ${data.modes.map(m =>
-              `<div>
-                <b>${m.name}</b><br>
-                Kills: ${m.kills}<br>
-                KPM: ${m.kpm}<br>
-                W/L: ${m.wl}%<br>
-                Wins: ${m.wins} | Losses: ${m.losses}<br>
+        <section class="card">
+          <div class="title">Modes</div>
+          <div class="grid-auto">
+            ${(data.modes || []).map(m => `
+              <div>
+                <b>${m.name}</b><br/>
+                Kills: ${m.kills} &nbsp; KPM: ${m.kpm}<br/>
+                W/L: ${m.wl}% &nbsp; Wins: ${m.wins} • Losses: ${m.losses}<br/>
                 Time: ${m.time} hrs
-              </div>`).join("")}
+              </div>
+            `).join("")}
           </div>
         </section>
       `;
 
-      // WEAPONS
+      // Weapons
       c.innerHTML += `
-        <section class="section">
-          <h2>Top Weapons</h2>
-          <div class="grid-cols-auto">
-            ${data.weapons.map(w =>
-              `<div>
-                <b>${w.name}</b><br>
-                Kills: ${w.kills}<br>
-                Accuracy: ${w.acc}<br>
+        <section class="card">
+          <div class="title">Top Weapons</div>
+          <div class="grid-auto">
+            ${(data.weapons || []).map(w => `
+              <div>
+                <b>${w.name}</b><br/>
+                Kills: ${w.kills}<br/>
+                Accuracy: ${w.acc}<br/>
                 KPM: ${w.kpm}
-              </div>`).join("")}
+              </div>
+            `).join("")}
           </div>
         </section>
       `;
 
-      // GADGETS
+      // Gadgets
       c.innerHTML += `
-        <section class="section">
-          <h2>Top Gadgets</h2>
-          <div class="grid-cols-auto">
-            ${data.gadgets.map(g =>
-              `<div>
-                <b>${g.name}</b><br>
-                Kills: ${g.kills}<br>
-                KPM: ${g.kpm}<br>
+        <section class="card">
+          <div class="title">Top Gadgets</div>
+          <div class="grid-auto">
+            ${(data.gadgets || []).map(g => `
+              <div>
+                <b>${g.name}</b><br/>
+                Kills: ${g.kills}<br/>
+                KPM: ${g.kpm}<br/>
                 Time: ${g.hours} hrs
-              </div>`).join("")}
+              </div>
+            `).join("")}
           </div>
         </section>
       `;
 
-      // Footer player info
+      // Player footer
       c.innerHTML += `
-        <section class="section text-center text-slate-300">
-          Player: <b>${data.player.name}</b> (${data.player.platform}) • Hours Played: ${data.player.hours}
+        <section class="card text-center text-slate-300">
+          Player: <b>${data.player?.name ?? TAG}</b> (${data.player?.platform ?? PLATFORM}) • Hours: ${data.player?.hours ?? "—"}
         </section>
       `;
     }
 
-    loadStats();
-    setInterval(loadStats, REFRESH_MS);
+    load();
+    setInterval(load, REFRESH_MS);
   </script>
 </body>
 </html>
