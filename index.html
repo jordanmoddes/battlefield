@@ -11,8 +11,8 @@
     :root{
       --bf-accent:#ff6a00;
       --bg-overlay: rgba(10,18,32,.90);
-      --card-bg: rgba(255,255,255,.11);   /* more solid (was .06) */
-      --card-border: rgba(255,255,255,.18); /* more solid (was .12) */
+      --card-bg: rgba(255,255,255,.11);    /* a bit more solid */
+      --card-border: rgba(255,255,255,.18);
       --text:#f8fafc;
       --sub:#e5e7eb;
       --title:#93c5fd;
@@ -23,8 +23,8 @@
     }
     body.light{
       --bg-overlay: rgba(255,255,255,.55);
-      --card-bg: rgba(0,0,0,.04);
-      --card-border: rgba(0,0,0,.15);
+      --card-bg: rgba(0,0,0,.06);
+      --card-border: rgba(0,0,0,.18);
       --text:#0b1220;
       --sub:#374151;
       --title:#1d4ed8;
@@ -42,7 +42,7 @@
     }
     .card{ background: var(--card-bg); border:1px solid var(--card-border); border-radius:16px; padding:16px }
     .grid-auto{ display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:12px }
-    .title{ color:var(--title); font-weight:900; font-size:1.25rem; text-align:center; margin-bottom:.75rem } /* bigger + centered */
+    .title{ color:var(--title); font-weight:900; font-size:1.25rem; text-align:center; margin-bottom:.75rem }
     .radio{ appearance:none; width:18px; height:18px; border:2px solid var(--title); border-radius:9999px; display:inline-block; position:relative }
     .radio:checked::after{ content:""; position:absolute; inset:3px; border-radius:9999px; background:var(--title) }
     .chip{ background: var(--card-bg); border:1px solid var(--card-border); padding:.4rem .6rem; border-radius:.6rem }
@@ -133,15 +133,15 @@
   </footer>
 
   <script>
-    // ===== set this once =====
-    const API_BASE = "https://jmodbattlefield.jmodwork.workers.dev";
-    // =========================
+    // ===== set this to your Worker URL =====
+    const API_BASE = "https://YOUR-WORKER-SUBDOMAIN.workers.dev";
+    // =======================================
     const REFRESH_MS = 60000;
 
     // Theme (default dark)
     const themeBtn = document.getElementById("themeBtn");
-    const storedTheme = localStorage.getItem("bf-theme");
-    if(storedTheme === "light"){ document.body.classList.add("light"); themeBtn.textContent = "Dark"; }
+    const saved = localStorage.getItem("bf-theme");
+    if(saved === "light"){ document.body.classList.add("light"); themeBtn.textContent = "Dark"; }
     themeBtn.addEventListener("click", () => {
       document.body.classList.toggle("light");
       const light = document.body.classList.contains("light");
@@ -151,10 +151,9 @@
 
     // Share
     document.getElementById("shareBtn").addEventListener("click", async () => {
-      try{
-        await navigator.clipboard.writeText(location.href);
+      try{ await navigator.clipboard.writeText(location.href);
         const b = document.getElementById("shareBtn"); b.textContent="Copied!"; setTimeout(()=>b.textContent="Share",1200);
-      }catch{ alert("Could not copy. Copy the address bar manually."); }
+      }catch{ alert("Could not copy. Use the address bar."); }
     });
 
     // Snip
@@ -172,7 +171,7 @@
       } catch(e){ alert("Screenshot failed. Try again."); console.error(e); }
     });
 
-    // Dashboard logic
+    // ----- Dashboard logic (fetch only on LOAD + 60s poll) -----
     const params = new URLSearchParams(location.search);
     const defaultTag = params.get("tag") || "notJMODsuspended";
     const defaultPlatform = params.get("platform") || "PS5";
@@ -185,19 +184,18 @@
     const contentEl = document.getElementById("content");
 
     let poll = null;
+    function getPlatform(){ const r=document.querySelector("input[name='platform']:checked"); return r ? r.value : "PS5"; }
+    function startPolling(p,t){ stopPolling(); poll=setInterval(()=>load(p,t), REFRESH_MS); }
+    function stopPolling(){ if(poll){ clearInterval(poll); poll=null; } }
 
     formEl.addEventListener("submit", (e) => {
       e.preventDefault();
       const platform = getPlatform();
       const tag = tagEl.value.trim() || "notJMODsuspended";
-      history.replaceState(null,"",`?${new URLSearchParams({platform,tag}).toString()}`);
+      history.replaceState(null, "", `?${new URLSearchParams({ platform, tag }).toString()}`);
       load(platform, tag);
       startPolling(platform, tag);
     });
-
-    function getPlatform(){ const r=document.querySelector("input[name='platform']:checked"); return r?r.value:"PS5"; }
-    function startPolling(p,t){ stopPolling(); poll=setInterval(()=>load(p,t), REFRESH_MS); }
-    function stopPolling(){ if(poll){ clearInterval(poll); poll=null; } }
 
     function rankSpan(txt){
       if(!txt) return "";
@@ -208,14 +206,17 @@
 
     async function load(platform, tag){
       try{
-        const url = `${API_BASE}/api/summary?platform=${encodeURIComponent(platform)}&tag=${encodeURIComponent(tag)}`;
-        const res = await fetch(url, { cache:"no-store" });
-        if(!res.ok) throw new Error(`API ${res.status}`);
+        const res = await fetch(`${API_BASE}/api/summary?platform=${encodeURIComponent(platform)}&tag=${encodeURIComponent(tag)}`, { cache:"no-store" });
+        if(!res.ok){
+          const msg = await res.text().catch(()=> "");
+          throw new Error(msg || `API ${res.status}`);
+        }
         const data = await res.json();
         render(data);
         updatedEl.textContent = new Date().toLocaleTimeString();
       }catch(err){
         renderError(err.message || String(err));
+        updatedEl.textContent = "—";
         console.error(err);
       }
     }
@@ -320,11 +321,8 @@
         </section>`;
     }
 
-    // initial load + polling
-    (function init(){
-      const p = getPlatform(), t = tagEl.value;
-      load(p,t); startPolling(p,t);
-    })();
+    // (Optional) If you want it to load immediately on first view, uncomment:
+    // load(getPlatform(), tagEl.value); startPolling(getPlatform(), tagEl.value);
   </script>
 </body>
 </html>
