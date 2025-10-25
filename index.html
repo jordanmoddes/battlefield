@@ -8,58 +8,82 @@
   <!-- html2canvas for Snip -->
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
   <style>
-    :root { --bf-accent: #ff6a00; }
-    /* Battlefield background + overlay for readability */
+    :root{
+      --bf-accent:#ff6a00;
+      --bg-overlay: rgba(10,18,32,.90);
+      --card-bg: rgba(255,255,255,.11);   /* more solid (was .06) */
+      --card-border: rgba(255,255,255,.18); /* more solid (was .12) */
+      --text:#f8fafc;
+      --sub:#e5e7eb;
+      --title:#93c5fd;
+      --nav-bg1: rgba(7,11,20,.75);
+      --nav-bg2: rgba(7,11,20,.35);
+      --rank-top:#84cc16;    /* lime-500 */
+      --rank-bottom:#ef4444; /* red-500 */
+    }
+    body.light{
+      --bg-overlay: rgba(255,255,255,.55);
+      --card-bg: rgba(0,0,0,.04);
+      --card-border: rgba(0,0,0,.15);
+      --text:#0b1220;
+      --sub:#374151;
+      --title:#1d4ed8;
+      --nav-bg1: rgba(255,255,255,.8);
+      --nav-bg2: rgba(255,255,255,.4);
+    }
+    /* Battlefield background + overlay */
     body{
-      min-height:100vh; color:#f8fafc;
+      min-height:100vh; color:var(--text);
       background:
-        linear-gradient(180deg, rgba(10,18,32,.90), rgba(10,18,32,.90)),
+        linear-gradient(180deg, var(--bg-overlay), var(--bg-overlay)),
         url('https://assetsio.gnwcdn.com/battlefield-6-2.jpg?width=690&quality=85&format=jpg&dpr=3&auto=webp') center/cover no-repeat fixed;
       font-family: system-ui,-apple-system,Segoe UI,Roboto,Inter,"Helvetica Neue",Arial,"Noto Sans","Apple Color Emoji","Segoe UI Emoji";
+      transition: background-color .2s ease, color .2s ease;
     }
-    .card { background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.12); border-radius: 16px; padding: 16px }
-    .grid-auto { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:12px }
-    .title { color:#93c5fd; font-weight:800; font-size:1.1rem; margin-bottom:.5rem }
-    .radio { appearance:none; width:18px; height:18px; border:2px solid #93c5fd; border-radius:9999px; display:inline-block; position:relative }
-    .radio:checked::after{ content:""; position:absolute; inset:3px; border-radius:9999px; background:#93c5fd }
-    .chip { background: rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12); padding:.4rem .6rem; border-radius:.6rem }
-    .btn {
-      background: var(--bf-accent); color:#0b0f1a; font-weight:800; letter-spacing:.02em;
+    .card{ background: var(--card-bg); border:1px solid var(--card-border); border-radius:16px; padding:16px }
+    .grid-auto{ display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:12px }
+    .title{ color:var(--title); font-weight:900; font-size:1.25rem; text-align:center; margin-bottom:.75rem } /* bigger + centered */
+    .radio{ appearance:none; width:18px; height:18px; border:2px solid var(--title); border-radius:9999px; display:inline-block; position:relative }
+    .radio:checked::after{ content:""; position:absolute; inset:3px; border-radius:9999px; background:var(--title) }
+    .chip{ background: var(--card-bg); border:1px solid var(--card-border); padding:.4rem .6rem; border-radius:.6rem }
+    .btn{
+      background:var(--bf-accent); color:#0b0f1a; font-weight:800; letter-spacing:.02em;
       padding:.75rem 1.25rem; border-radius:9999px; box-shadow:0 8px 24px rgba(255,106,0,.18);
       transition: transform .06s ease, filter .06s ease;
     }
-    .btn:hover { filter:brightness(1.05); transform:translateY(-1px) }
+    .btn:hover{ filter:brightness(1.05); transform:translateY(-1px) }
     .btn:active{ transform:translateY(0) }
-    .nav { backdrop-filter: blur(6px); background: linear-gradient(180deg, rgba(7,11,20,.75), rgba(7,11,20,.35)); border-bottom:1px solid rgba(255,255,255,.08) }
-    .nav a { color:#e5e7eb }
-    .nav .brand { font-weight:900; letter-spacing:.06em; }
+    .nav{ backdrop-filter: blur(6px); background: linear-gradient(180deg, var(--nav-bg1), var(--nav-bg2)); border-bottom:1px solid var(--card-border) }
+    .nav a{ color:var(--sub) }
+    .nav .brand{ font-weight:900; letter-spacing:.06em }
     .nav .icon-btn{
-      background: rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.15);
-      padding:.45rem .8rem; border-radius:.6rem; font-weight:700;
+      background: var(--card-bg); border:1px solid var(--card-border);
+      padding:.45rem .8rem; border-radius:.6rem; font-weight:700; color:var(--text)
     }
     .nav .icon-btn:hover{ background: rgba(255,255,255,.12) }
+    .rank-top{ color:var(--rank-top) }
+    .rank-bottom{ color:var(--rank-bottom) }
   </style>
 </head>
 <body class="pb-12">
-
   <!-- Top Navigation -->
   <nav class="nav sticky top-0 z-50">
     <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
-      <a href="https://jordanmoddes.com/resume" target="_blank" rel="noopener" class="brand text-lg">
-        JMOD
-      </a>
+      <a href="https://jordanmoddes.com" target="_blank" rel="noopener" class="brand text-lg">JMOD</a>
       <div class="flex items-center gap-2">
+        <a class="icon-btn" href="https://www.ea.com/en/games/battlefield/battlefield-6/player-stats" target="_blank" rel="noopener">Battlefield</a>
         <button id="shareBtn" class="icon-btn">Share</button>
         <button id="snipBtn" class="icon-btn">Snip</button>
+        <button id="themeBtn" class="icon-btn">Light</button>
       </div>
     </div>
   </nav>
 
   <header class="text-center mt-6 mb-6 px-4">
-    <h1 class="text-3xl md:text-4xl font-extrabold text-blue-300 tracking-tight drop-shadow">
+    <h1 class="text-3xl md:text-4xl font-extrabold tracking-tight" style="color:var(--title)">
       Battlefield 6 Stats Dashboard
     </h1>
-    <p class="text-blue-100/80">Pick a platform, enter a gamer tag, then hit <b style="color:var(--bf-accent)">LOAD</b>. Auto-refresh every 60s.</p>
+    <p class="text-sm" style="color:var(--sub)">Pick a platform, enter a gamer tag, then hit <b style="color:var(--bf-accent)">LOAD</b>. Auto-refresh every 60s.</p>
   </header>
 
   <!-- Controls -->
@@ -67,8 +91,8 @@
     <div class="card grid grid-cols-1 md:grid-cols-[1fr_auto_1fr_auto] gap-3">
       <!-- Platform radios -->
       <div>
-        <div class="text-xs text-slate-300 mb-1">Platform</div>
-        <div class="flex items-center gap-4">
+        <div class="text-xs" style="color:var(--sub);">Platform</div>
+        <div class="flex items-center gap-4 mt-1">
           <label class="flex items-center gap-2 cursor-pointer chip">
             <input class="radio" type="radio" name="platform" value="PS5"  id="ps5"  />
             <span class="font-semibold">PS5</span>
@@ -91,74 +115,69 @@
 
       <!-- Gamer tag -->
       <div>
-        <div class="text-xs text-slate-300 mb-1">Gamer Tag</div>
+        <div class="text-xs" style="color:var(--sub);">Gamer Tag</div>
         <input id="tag" class="w-full rounded-md px-3 py-2 text-slate-900" placeholder="Enter gamer tag" />
       </div>
 
-      <!-- Last updated chip -->
+      <!-- Last updated -->
       <div class="flex items-end justify-start md:justify-end">
-        <div class="chip text-xs text-slate-200/90">Last updated: <span id="updated">—</span></div>
+        <div class="chip text-xs" style="color:var(--sub)">Last updated: <span id="updated">—</span></div>
       </div>
     </div>
   </form>
 
   <main id="content" class="max-w-6xl mx-auto text-sm space-y-4 px-4"></main>
 
-  <footer class="text-center text-xs text-slate-300 mt-10 px-4">
+  <footer class="text-center text-xs mt-10 px-4" style="color:var(--sub)">
     Powered by Cloudflare Worker API • Theme inspired by BF6
   </footer>
 
   <script>
-    // ===== SET THIS TO YOUR WORKER URL =====
+    // ===== set this once =====
     const API_BASE = "https://jmodbattlefield.jmodwork.workers.dev";
-    // ======================================
+    // =========================
     const REFRESH_MS = 60000;
 
-    // --- share ---
-    const shareBtn = document.getElementById("shareBtn");
-    shareBtn.addEventListener("click", async () => {
-      try {
-        await navigator.clipboard.writeText(window.location.href);
-        shareBtn.textContent = "Copied!";
-        setTimeout(() => shareBtn.textContent = "Share", 1200);
-      } catch {
-        alert("Could not copy to clipboard. You can copy the URL from the address bar.");
-      }
+    // Theme (default dark)
+    const themeBtn = document.getElementById("themeBtn");
+    const storedTheme = localStorage.getItem("bf-theme");
+    if(storedTheme === "light"){ document.body.classList.add("light"); themeBtn.textContent = "Dark"; }
+    themeBtn.addEventListener("click", () => {
+      document.body.classList.toggle("light");
+      const light = document.body.classList.contains("light");
+      themeBtn.textContent = light ? "Dark" : "Light";
+      localStorage.setItem("bf-theme", light ? "light" : "dark");
     });
 
-    // --- snip (screenshot) ---
-    const snipBtn = document.getElementById("snipBtn");
-    snipBtn.addEventListener("click", async () => {
+    // Share
+    document.getElementById("shareBtn").addEventListener("click", async () => {
+      try{
+        await navigator.clipboard.writeText(location.href);
+        const b = document.getElementById("shareBtn"); b.textContent="Copied!"; setTimeout(()=>b.textContent="Share",1200);
+      }catch{ alert("Could not copy. Copy the address bar manually."); }
+    });
+
+    // Snip
+    document.getElementById("snipBtn").addEventListener("click", async () => {
       try {
-        // capture the whole page (body). External BG might be cross-origin; html2canvas will still capture content.
-        const canvas = await html2canvas(document.body, { useCORS: true, logging: false, windowWidth: document.documentElement.scrollWidth, windowHeight: document.documentElement.scrollHeight });
+        const canvas = await html2canvas(document.body, { useCORS:true, logging:false, windowWidth:document.documentElement.scrollWidth, windowHeight:document.documentElement.scrollHeight });
         canvas.toBlob(async (blob) => {
-          try {
+          try{
             await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
-            snipBtn.textContent = "Snipped!";
-            setTimeout(() => snipBtn.textContent = "Snip", 1200);
-          } catch {
-            // fallback: download
-            const a = document.createElement("a");
-            a.href = URL.createObjectURL(blob);
-            a.download = "battlefield-dashboard.png";
-            a.click();
-            URL.revokeObjectURL(a.href);
+            const b=document.getElementById("snipBtn"); b.textContent="Snipped!"; setTimeout(()=>b.textContent="Snip",1200);
+          }catch{
+            const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="battlefield-dashboard.png"; a.click(); URL.revokeObjectURL(a.href);
           }
         });
-      } catch (e) {
-        alert("Screenshot failed. Try again, or use your OS screenshot shortcut.");
-        console.error(e);
-      }
+      } catch(e){ alert("Screenshot failed. Try again."); console.error(e); }
     });
 
-    // ====== dashboard logic (unchanged, with radios + URL sync) ======
+    // Dashboard logic
     const params = new URLSearchParams(location.search);
     const defaultTag = params.get("tag") || "notJMODsuspended";
     const defaultPlatform = params.get("platform") || "PS5";
 
-    const tagEl = document.getElementById("tag");
-    tagEl.value = defaultTag;
+    const tagEl = document.getElementById("tag"); tagEl.value = defaultTag;
     document.getElementById({ "PS5":"ps5", "Xbox":"xbox", "PC":"pc" }[defaultPlatform] || "ps5").checked = true;
 
     const formEl = document.getElementById("controls");
@@ -171,18 +190,21 @@
       e.preventDefault();
       const platform = getPlatform();
       const tag = tagEl.value.trim() || "notJMODsuspended";
-      const qs = new URLSearchParams({ platform, tag });
-      history.replaceState(null, "", `?${qs.toString()}`);
+      history.replaceState(null,"",`?${new URLSearchParams({platform,tag}).toString()}`);
       load(platform, tag);
       startPolling(platform, tag);
     });
 
-    function getPlatform(){
-      const r = document.querySelector("input[name='platform']:checked");
-      return r ? r.value : "PS5";
+    function getPlatform(){ const r=document.querySelector("input[name='platform']:checked"); return r?r.value:"PS5"; }
+    function startPolling(p,t){ stopPolling(); poll=setInterval(()=>load(p,t), REFRESH_MS); }
+    function stopPolling(){ if(poll){ clearInterval(poll); poll=null; } }
+
+    function rankSpan(txt){
+      if(!txt) return "";
+      const cls = txt.toLowerCase().startsWith("top") ? "rank-top" :
+                  txt.toLowerCase().startsWith("bottom") ? "rank-bottom" : "";
+      return cls ? `<span class="${cls}">(${txt})</span>` : `(${txt})`;
     }
-    function startPolling(p, t){ stopPolling(); poll = setInterval(() => load(p,t), REFRESH_MS); }
-    function stopPolling(){ if(poll){ clearInterval(poll); poll = null; } }
 
     async function load(platform, tag){
       try{
@@ -216,14 +238,14 @@
         <section class="card">
           <div class="title">Overview</div>
           <div class="grid-auto">
-            <div><b>Kills:</b> ${o.kills ?? "—"} <span class="text-slate-300/70 text-xs">${o.killsRank?`(${o.killsRank})`:""}</span></div>
+            <div><b>Kills:</b> ${o.kills ?? "—"} ${o.killsRank ? rankSpan(o.killsRank) : ""}</div>
             <div><b>Deaths:</b> ${o.deaths ?? "—"}</div>
-            <div><b>Assists:</b> ${o.assists ?? "—"} <span class="text-slate-300/70 text-xs">${o.assistsRank?`(${o.assistsRank})`:""}</span></div>
-            <div><b>Revives:</b> ${o.revives ?? "—"} <span class="text-slate-300/70 text-xs">${o.revivesRank?`(${o.revivesRank})`:""}</span></div>
+            <div><b>Assists:</b> ${o.assists ?? "—"} ${o.assistsRank ? rankSpan(o.assistsRank) : ""}</div>
+            <div><b>Revives:</b> ${o.revives ?? "—"} ${o.revivesRank ? rankSpan(o.revivesRank) : ""}</div>
             <div><b>K/D:</b> ${o.kd ?? "—"}</div>
             <div><b>Kills/Match:</b> ${o.killsPerMatch ?? "—"}</div>
             <div><b>Kills/Minute:</b> ${o.killsPerMinute ?? "—"}</div>
-            <div><b>W/L:</b> ${o.wl ?? "—"} <span class="text-slate-300/70 text-xs">${o.wlRank?`(${o.wlRank})`:""}</span></div>
+            <div><b>W/L:</b> ${o.wl ?? "—"} ${o.wlRank ? rankSpan(o.wlRank) : ""}</div>
             <div><b>Best Class:</b> ${o.bestClass?.name ?? "—"}</div>
             <div><b>Rank:</b> ${o.rank ?? "—"}</div>
             <div><b>XP:</b> ${o.xp?.toLocaleString?.() ?? "—"}</div>
@@ -293,14 +315,14 @@
 
       // Footer
       contentEl.innerHTML += `
-        <section class="card text-center text-slate-200/90">
+        <section class="card text-center" style="color:var(--sub)">
           Player: <b>${data.player?.name ?? tagEl.value}</b> (${data.player?.platform ?? getPlatform()}) • Hours: ${data.player?.hours ?? "—"}
         </section>`;
     }
 
     // initial load + polling
     (function init(){
-      const p = getPlatform(); const t = tagEl.value;
+      const p = getPlatform(), t = tagEl.value;
       load(p,t); startPolling(p,t);
     })();
   </script>
