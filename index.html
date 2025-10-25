@@ -3,37 +3,50 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Battlefield 6 Dashboard | notJMODsuspended</title>
+  <title>Battlefield 6 Dashboard</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     body { background: linear-gradient(135deg,#0f172a,#1f2937 30%,#0b1220); color:#f8fafc }
     .card { background: rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.08); border-radius:16px; padding:16px }
     .grid-auto { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:12px }
-    .title { color:#93c5fd; font-weight:800; font-size:1.25rem; margin-bottom:.5rem }
+    .title { color:#93c5fd; font-weight:800; font-size:1.1rem; margin-bottom:.5rem }
     .err { background:#7f1d1d; border-color:#fecaca }
   </style>
 </head>
 <body class="p-6">
-  <header class="text-center mb-8">
+  <header class="text-center mb-6">
     <h1 class="text-3xl font-extrabold text-blue-400">Battlefield 6 Stats Dashboard</h1>
-    <p class="text-blue-200/80">Live summary for <b id="who">notJMODsuspended</b> (<span id="plat">PS5</span>)</p>
+    <p class="text-blue-200/80">Enter a platform & gamer tag, then press LOAD. Auto-refresh every 60s.</p>
   </header>
 
-  <!-- Controls (optional later: make them editable) -->
-  <div class="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
+  <!-- Controls -->
+  <form id="controls" class="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-[1fr_auto_1fr_auto] gap-3 mb-6">
     <div class="card">
       <div class="text-xs text-slate-300 mb-1">Platform</div>
-      <div id="platformView" class="font-semibold">PS5</div>
+      <select id="platform" class="w-full rounded-md px-3 py-2 text-slate-900 font-medium">
+        <option>PS5</option>
+        <option>Xbox</option>
+        <option>PC</option>
+      </select>
     </div>
+
+    <div class="flex items-stretch justify-center">
+      <button id="loadBtn" type="submit"
+        class="self-end md:self-auto h-[48px] md:h-auto px-6 py-2 rounded-2xl bg-indigo-500 hover:bg-indigo-600 font-semibold">
+        LOAD
+      </button>
+    </div>
+
     <div class="card">
       <div class="text-xs text-slate-300 mb-1">Gamer Tag</div>
-      <div id="tagView" class="font-semibold">notJMODsuspended</div>
+      <input id="tag" class="w-full rounded-md px-3 py-2 text-slate-900" placeholder="Enter gamer tag" />
     </div>
+
     <div class="card">
       <div class="text-xs text-slate-300 mb-1">Status</div>
-      <div id="status" class="font-semibold">initializing…</div>
+      <div class="font-semibold"><span id="status">idle</span><span id="updated" class="text-slate-400 text-xs"></span></div>
     </div>
-  </div>
+  </form>
 
   <main id="content" class="max-w-6xl mx-auto text-sm space-y-4"></main>
 
@@ -42,56 +55,75 @@
   </footer>
 
   <script>
-    // ========= EDIT THIS TO YOUR WORKER URL =========
-    const API_BASE = "https://jmodbattlefield.jmodwork.workers.dev";
-    // =================================================
-    const TAG = "notJMODsuspended";
-    const PLATFORM = "PS5";
+    // ===== EDIT THIS ONCE =====
+    const API_BASE = "https://jmodbattlefield.jmodwork.workers.dev"; // your Worker base URL
+    // ==========================
     const REFRESH_MS = 60000;
 
+    const qs = new URLSearchParams(location.search);
+    const platformEl = document.getElementById("platform");
+    const tagEl = document.getElementById("tag");
     const statusEl = document.getElementById("status");
-    const whoEl = document.getElementById("who");
-    const platEl = document.getElementById("plat");
-    document.getElementById("platformView").textContent = PLATFORM;
-    document.getElementById("tagView").textContent = TAG;
+    const updatedEl = document.getElementById("updated");
+    const contentEl = document.getElementById("content");
+    const formEl = document.getElementById("controls");
+
+    // Pre-fill from URL (defaults)
+    platformEl.value = qs.get("platform") || "PS5";
+    tagEl.value = qs.get("tag") || "notJMODsuspended";
+
+    let poll = null;
+
+    formEl.addEventListener("submit", (e) => {
+      e.preventDefault();
+      // sync URL
+      const params = new URLSearchParams({ platform: platformEl.value, tag: tagEl.value });
+      history.replaceState(null, "", `?${params.toString()}`);
+      // load + restart polling
+      load();
+      startPolling();
+    });
+
+    function startPolling() { stopPolling(); poll = setInterval(load, REFRESH_MS); }
+    function stopPolling() { if (poll) { clearInterval(poll); poll = null; } }
 
     async function load() {
+      const platform = platformEl.value.trim();
+      const tag = tagEl.value.trim();
+      if (!tag) { renderError("Enter a gamer tag."); return; }
       try {
         statusEl.textContent = "loading…";
-        const url = `${API_BASE}/api/summary?platform=${encodeURIComponent(PLATFORM)}&tag=${encodeURIComponent(TAG)}`;
+        updatedEl.textContent = "";
+        const url = `${API_BASE}/api/summary?platform=${encodeURIComponent(platform)}&tag=${encodeURIComponent(tag)}`;
         const res = await fetch(url, { cache: "no-store" });
         if (!res.ok) throw new Error(`API ${res.status}`);
         const data = await res.json();
         render(data);
         statusEl.textContent = "ok";
-      } catch (e) {
+        updatedEl.textContent = ` • updated ${new Date().toLocaleTimeString()}`;
+      } catch (err) {
         statusEl.textContent = "error";
-        renderError(e);
-        console.error(e);
+        renderError(err.message || String(err));
+        console.error(err);
       }
     }
 
-    function renderError(e) {
-      const c = document.getElementById("content");
-      c.innerHTML = `
+    function renderError(msg) {
+      contentEl.innerHTML = `
         <div class="card err">
           <div class="font-bold mb-1">Couldn’t load data</div>
-          <div class="text-xs">Check API_BASE in index.html and that your Worker is deployed & returning JSON.</div>
-          <div class="text-xs mt-2"><code>${String(e)}</code></div>
+          <div class="text-xs">${msg}</div>
+          <div class="text-xs mt-2">Check API_BASE, the Worker deployment, and CORS headers.</div>
         </div>
       `;
     }
 
     function render(data) {
-      whoEl.textContent = data.player?.name || TAG;
-      platEl.textContent = data.player?.platform || PLATFORM;
-
       const o = data.overview || {};
-      const c = document.getElementById("content");
-      c.innerHTML = "";
+      contentEl.innerHTML = "";
 
       // Overview
-      c.innerHTML += `
+      contentEl.innerHTML += `
         <section class="card">
           <div class="title">Overview</div>
           <div class="grid-auto">
@@ -112,7 +144,7 @@
       `;
 
       // Classes
-      c.innerHTML += `
+      contentEl.innerHTML += `
         <section class="card">
           <div class="title">Classes</div>
           <div class="grid-auto">
@@ -129,7 +161,7 @@
       `;
 
       // Modes
-      c.innerHTML += `
+      contentEl.innerHTML += `
         <section class="card">
           <div class="title">Modes</div>
           <div class="grid-auto">
@@ -146,7 +178,7 @@
       `;
 
       // Weapons
-      c.innerHTML += `
+      contentEl.innerHTML += `
         <section class="card">
           <div class="title">Top Weapons</div>
           <div class="grid-auto">
@@ -163,7 +195,7 @@
       `;
 
       // Gadgets
-      c.innerHTML += `
+      contentEl.innerHTML += `
         <section class="card">
           <div class="title">Top Gadgets</div>
           <div class="grid-auto">
@@ -180,15 +212,16 @@
       `;
 
       // Player footer
-      c.innerHTML += `
+      contentEl.innerHTML += `
         <section class="card text-center text-slate-300">
-          Player: <b>${data.player?.name ?? TAG}</b> (${data.player?.platform ?? PLATFORM}) • Hours: ${data.player?.hours ?? "—"}
+          Player: <b>${data.player?.name ?? tagEl.value}</b> (${data.player?.platform ?? platformEl.value}) • Hours: ${data.player?.hours ?? "—"}
         </section>
       `;
     }
 
+    // first load (and start polling)
     load();
-    setInterval(load, REFRESH_MS);
+    startPolling();
   </script>
 </body>
 </html>
