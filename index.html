@@ -5,120 +5,209 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Battlefield 6 Dashboard</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <!-- html2canvas for Snip -->
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
   <style>
-    body { background: linear-gradient(135deg,#0f172a,#1f2937 30%,#0b1220); color:#f8fafc }
-    .card { background: rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.08); border-radius:16px; padding:16px }
+    :root { --bf-accent: #ff6a00; }
+    /* Battlefield background + overlay for readability */
+    body{
+      min-height:100vh; color:#f8fafc;
+      background:
+        linear-gradient(180deg, rgba(10,18,32,.90), rgba(10,18,32,.90)),
+        url('https://assetsio.gnwcdn.com/battlefield-6-2.jpg?width=690&quality=85&format=jpg&dpr=3&auto=webp') center/cover no-repeat fixed;
+      font-family: system-ui,-apple-system,Segoe UI,Roboto,Inter,"Helvetica Neue",Arial,"Noto Sans","Apple Color Emoji","Segoe UI Emoji";
+    }
+    .card { background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.12); border-radius: 16px; padding: 16px }
     .grid-auto { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:12px }
     .title { color:#93c5fd; font-weight:800; font-size:1.1rem; margin-bottom:.5rem }
-    .err { background:#7f1d1d; border-color:#fecaca }
+    .radio { appearance:none; width:18px; height:18px; border:2px solid #93c5fd; border-radius:9999px; display:inline-block; position:relative }
+    .radio:checked::after{ content:""; position:absolute; inset:3px; border-radius:9999px; background:#93c5fd }
+    .chip { background: rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12); padding:.4rem .6rem; border-radius:.6rem }
+    .btn {
+      background: var(--bf-accent); color:#0b0f1a; font-weight:800; letter-spacing:.02em;
+      padding:.75rem 1.25rem; border-radius:9999px; box-shadow:0 8px 24px rgba(255,106,0,.18);
+      transition: transform .06s ease, filter .06s ease;
+    }
+    .btn:hover { filter:brightness(1.05); transform:translateY(-1px) }
+    .btn:active{ transform:translateY(0) }
+    .nav { backdrop-filter: blur(6px); background: linear-gradient(180deg, rgba(7,11,20,.75), rgba(7,11,20,.35)); border-bottom:1px solid rgba(255,255,255,.08) }
+    .nav a { color:#e5e7eb }
+    .nav .brand { font-weight:900; letter-spacing:.06em; }
+    .nav .icon-btn{
+      background: rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.15);
+      padding:.45rem .8rem; border-radius:.6rem; font-weight:700;
+    }
+    .nav .icon-btn:hover{ background: rgba(255,255,255,.12) }
   </style>
 </head>
-<body class="p-6">
-  <header class="text-center mb-6">
-    <h1 class="text-3xl font-extrabold text-blue-400">Battlefield 6 Stats Dashboard</h1>
-    <p class="text-blue-200/80">Enter a platform & gamer tag, then press LOAD. Auto-refresh every 60s.</p>
+<body class="pb-12">
+
+  <!-- Top Navigation -->
+  <nav class="nav sticky top-0 z-50">
+    <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+      <a href="https://jordanmoddes.com/resume" target="_blank" rel="noopener" class="brand text-lg">
+        JMOD
+      </a>
+      <div class="flex items-center gap-2">
+        <button id="shareBtn" class="icon-btn">Share</button>
+        <button id="snipBtn" class="icon-btn">Snip</button>
+      </div>
+    </div>
+  </nav>
+
+  <header class="text-center mt-6 mb-6 px-4">
+    <h1 class="text-3xl md:text-4xl font-extrabold text-blue-300 tracking-tight drop-shadow">
+      Battlefield 6 Stats Dashboard
+    </h1>
+    <p class="text-blue-100/80">Pick a platform, enter a gamer tag, then hit <b style="color:var(--bf-accent)">LOAD</b>. Auto-refresh every 60s.</p>
   </header>
 
   <!-- Controls -->
-  <form id="controls" class="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-[1fr_auto_1fr_auto] gap-3 mb-6">
-    <div class="card">
-      <div class="text-xs text-slate-300 mb-1">Platform</div>
-      <select id="platform" class="w-full rounded-md px-3 py-2 text-slate-900 font-medium">
-        <option>PS5</option>
-        <option>Xbox</option>
-        <option>PC</option>
-      </select>
-    </div>
+  <form id="controls" class="max-w-6xl mx-auto grid grid-cols-1 gap-3 mb-6 px-4">
+    <div class="card grid grid-cols-1 md:grid-cols-[1fr_auto_1fr_auto] gap-3">
+      <!-- Platform radios -->
+      <div>
+        <div class="text-xs text-slate-300 mb-1">Platform</div>
+        <div class="flex items-center gap-4">
+          <label class="flex items-center gap-2 cursor-pointer chip">
+            <input class="radio" type="radio" name="platform" value="PS5"  id="ps5"  />
+            <span class="font-semibold">PS5</span>
+          </label>
+          <label class="flex items-center gap-2 cursor-pointer chip">
+            <input class="radio" type="radio" name="platform" value="Xbox" id="xbox" />
+            <span class="font-semibold">Xbox</span>
+          </label>
+          <label class="flex items-center gap-2 cursor-pointer chip">
+            <input class="radio" type="radio" name="platform" value="PC"   id="pc"   />
+            <span class="font-semibold">PC</span>
+          </label>
+        </div>
+      </div>
 
-    <div class="flex items-stretch justify-center">
-      <button id="loadBtn" type="submit"
-        class="self-end md:self-auto h-[48px] md:h-auto px-6 py-2 rounded-2xl bg-indigo-500 hover:bg-indigo-600 font-semibold">
-        LOAD
-      </button>
-    </div>
+      <!-- LOAD button -->
+      <div class="flex items-end justify-center">
+        <button id="loadBtn" type="submit" class="btn">LOAD</button>
+      </div>
 
-    <div class="card">
-      <div class="text-xs text-slate-300 mb-1">Gamer Tag</div>
-      <input id="tag" class="w-full rounded-md px-3 py-2 text-slate-900" placeholder="Enter gamer tag" />
-    </div>
+      <!-- Gamer tag -->
+      <div>
+        <div class="text-xs text-slate-300 mb-1">Gamer Tag</div>
+        <input id="tag" class="w-full rounded-md px-3 py-2 text-slate-900" placeholder="Enter gamer tag" />
+      </div>
 
-    <div class="card">
-      <div class="text-xs text-slate-300 mb-1">Status</div>
-      <div class="font-semibold"><span id="status">idle</span><span id="updated" class="text-slate-400 text-xs"></span></div>
+      <!-- Last updated chip -->
+      <div class="flex items-end justify-start md:justify-end">
+        <div class="chip text-xs text-slate-200/90">Last updated: <span id="updated">—</span></div>
+      </div>
     </div>
   </form>
 
-  <main id="content" class="max-w-6xl mx-auto text-sm space-y-4"></main>
+  <main id="content" class="max-w-6xl mx-auto text-sm space-y-4 px-4"></main>
 
-  <footer class="text-center text-xs text-slate-400 mt-10">
-    Data auto-refreshes every 60s • Powered by Cloudflare Worker API
+  <footer class="text-center text-xs text-slate-300 mt-10 px-4">
+    Powered by Cloudflare Worker API • Theme inspired by BF6
   </footer>
 
   <script>
-    // ===== EDIT THIS ONCE =====
-    const API_BASE = "https://jmodbattlefield.jmodwork.workers.dev"; // your Worker base URL
-    // ==========================
+    // ===== SET THIS TO YOUR WORKER URL =====
+    const API_BASE = "https://jmodbattlefield.jmodwork.workers.dev";
+    // ======================================
     const REFRESH_MS = 60000;
 
-    const qs = new URLSearchParams(location.search);
-    const platformEl = document.getElementById("platform");
+    // --- share ---
+    const shareBtn = document.getElementById("shareBtn");
+    shareBtn.addEventListener("click", async () => {
+      try {
+        await navigator.clipboard.writeText(window.location.href);
+        shareBtn.textContent = "Copied!";
+        setTimeout(() => shareBtn.textContent = "Share", 1200);
+      } catch {
+        alert("Could not copy to clipboard. You can copy the URL from the address bar.");
+      }
+    });
+
+    // --- snip (screenshot) ---
+    const snipBtn = document.getElementById("snipBtn");
+    snipBtn.addEventListener("click", async () => {
+      try {
+        // capture the whole page (body). External BG might be cross-origin; html2canvas will still capture content.
+        const canvas = await html2canvas(document.body, { useCORS: true, logging: false, windowWidth: document.documentElement.scrollWidth, windowHeight: document.documentElement.scrollHeight });
+        canvas.toBlob(async (blob) => {
+          try {
+            await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
+            snipBtn.textContent = "Snipped!";
+            setTimeout(() => snipBtn.textContent = "Snip", 1200);
+          } catch {
+            // fallback: download
+            const a = document.createElement("a");
+            a.href = URL.createObjectURL(blob);
+            a.download = "battlefield-dashboard.png";
+            a.click();
+            URL.revokeObjectURL(a.href);
+          }
+        });
+      } catch (e) {
+        alert("Screenshot failed. Try again, or use your OS screenshot shortcut.");
+        console.error(e);
+      }
+    });
+
+    // ====== dashboard logic (unchanged, with radios + URL sync) ======
+    const params = new URLSearchParams(location.search);
+    const defaultTag = params.get("tag") || "notJMODsuspended";
+    const defaultPlatform = params.get("platform") || "PS5";
+
     const tagEl = document.getElementById("tag");
-    const statusEl = document.getElementById("status");
+    tagEl.value = defaultTag;
+    document.getElementById({ "PS5":"ps5", "Xbox":"xbox", "PC":"pc" }[defaultPlatform] || "ps5").checked = true;
+
+    const formEl = document.getElementById("controls");
     const updatedEl = document.getElementById("updated");
     const contentEl = document.getElementById("content");
-    const formEl = document.getElementById("controls");
-
-    // Pre-fill from URL (defaults)
-    platformEl.value = qs.get("platform") || "PS5";
-    tagEl.value = qs.get("tag") || "notJMODsuspended";
 
     let poll = null;
 
     formEl.addEventListener("submit", (e) => {
       e.preventDefault();
-      // sync URL
-      const params = new URLSearchParams({ platform: platformEl.value, tag: tagEl.value });
-      history.replaceState(null, "", `?${params.toString()}`);
-      // load + restart polling
-      load();
-      startPolling();
+      const platform = getPlatform();
+      const tag = tagEl.value.trim() || "notJMODsuspended";
+      const qs = new URLSearchParams({ platform, tag });
+      history.replaceState(null, "", `?${qs.toString()}`);
+      load(platform, tag);
+      startPolling(platform, tag);
     });
 
-    function startPolling() { stopPolling(); poll = setInterval(load, REFRESH_MS); }
-    function stopPolling() { if (poll) { clearInterval(poll); poll = null; } }
+    function getPlatform(){
+      const r = document.querySelector("input[name='platform']:checked");
+      return r ? r.value : "PS5";
+    }
+    function startPolling(p, t){ stopPolling(); poll = setInterval(() => load(p,t), REFRESH_MS); }
+    function stopPolling(){ if(poll){ clearInterval(poll); poll = null; } }
 
-    async function load() {
-      const platform = platformEl.value.trim();
-      const tag = tagEl.value.trim();
-      if (!tag) { renderError("Enter a gamer tag."); return; }
-      try {
-        statusEl.textContent = "loading…";
-        updatedEl.textContent = "";
+    async function load(platform, tag){
+      try{
         const url = `${API_BASE}/api/summary?platform=${encodeURIComponent(platform)}&tag=${encodeURIComponent(tag)}`;
-        const res = await fetch(url, { cache: "no-store" });
-        if (!res.ok) throw new Error(`API ${res.status}`);
+        const res = await fetch(url, { cache:"no-store" });
+        if(!res.ok) throw new Error(`API ${res.status}`);
         const data = await res.json();
         render(data);
-        statusEl.textContent = "ok";
-        updatedEl.textContent = ` • updated ${new Date().toLocaleTimeString()}`;
-      } catch (err) {
-        statusEl.textContent = "error";
+        updatedEl.textContent = new Date().toLocaleTimeString();
+      }catch(err){
         renderError(err.message || String(err));
         console.error(err);
       }
     }
 
-    function renderError(msg) {
+    function renderError(msg){
       contentEl.innerHTML = `
-        <div class="card err">
+        <div class="card" style="background:#7f1d1d;border-color:#fecaca">
           <div class="font-bold mb-1">Couldn’t load data</div>
           <div class="text-xs">${msg}</div>
-          <div class="text-xs mt-2">Check API_BASE, the Worker deployment, and CORS headers.</div>
-        </div>
-      `;
+          <div class="text-xs mt-2">Check API_BASE, Worker deployment, and CORS headers.</div>
+        </div>`;
     }
 
-    function render(data) {
+    function render(data){
       const o = data.overview || {};
       contentEl.innerHTML = "";
 
@@ -127,101 +216,93 @@
         <section class="card">
           <div class="title">Overview</div>
           <div class="grid-auto">
-            <div><b>Kills:</b> ${o.kills ?? "—"} <span class="text-slate-400 text-xs">${o.killsRank ? `(${o.killsRank})` : ""}</span></div>
+            <div><b>Kills:</b> ${o.kills ?? "—"} <span class="text-slate-300/70 text-xs">${o.killsRank?`(${o.killsRank})`:""}</span></div>
             <div><b>Deaths:</b> ${o.deaths ?? "—"}</div>
-            <div><b>Assists:</b> ${o.assists ?? "—"} <span class="text-slate-400 text-xs">${o.assistsRank ? `(${o.assistsRank})` : ""}</span></div>
-            <div><b>Revives:</b> ${o.revives ?? "—"} <span class="text-slate-400 text-xs">${o.revivesRank ? `(${o.revivesRank})` : ""}</span></div>
+            <div><b>Assists:</b> ${o.assists ?? "—"} <span class="text-slate-300/70 text-xs">${o.assistsRank?`(${o.assistsRank})`:""}</span></div>
+            <div><b>Revives:</b> ${o.revives ?? "—"} <span class="text-slate-300/70 text-xs">${o.revivesRank?`(${o.revivesRank})`:""}</span></div>
             <div><b>K/D:</b> ${o.kd ?? "—"}</div>
             <div><b>Kills/Match:</b> ${o.killsPerMatch ?? "—"}</div>
             <div><b>Kills/Minute:</b> ${o.killsPerMinute ?? "—"}</div>
-            <div><b>W/L:</b> ${o.wl ?? "—"} <span class="text-slate-400 text-xs">${o.wlRank ? `(${o.wlRank})` : ""}</span></div>
+            <div><b>W/L:</b> ${o.wl ?? "—"} <span class="text-slate-300/70 text-xs">${o.wlRank?`(${o.wlRank})`:""}</span></div>
             <div><b>Best Class:</b> ${o.bestClass?.name ?? "—"}</div>
             <div><b>Rank:</b> ${o.rank ?? "—"}</div>
             <div><b>XP:</b> ${o.xp?.toLocaleString?.() ?? "—"}</div>
             <div><b>Matches:</b> ${o.matches ?? "—"}</div>
           </div>
-        </section>
-      `;
+        </section>`;
 
       // Classes
       contentEl.innerHTML += `
         <section class="card">
           <div class="title">Classes</div>
           <div class="grid-auto">
-            ${(data.classes || []).map(x => `
+            ${(data.classes||[]).map(x=>`
               <div>
                 <b>${x.name}</b><br/>
                 ⭐ ${x.stars} &nbsp; Kills: ${x.kills}<br/>
                 K/D: ${x.kd} &nbsp; KPM: ${x.kpm}<br/>
                 Revives: ${x.revives} &nbsp; Time: ${x.hours} hrs
-              </div>
-            `).join("")}
+              </div>`).join("")}
           </div>
-        </section>
-      `;
+        </section>`;
 
       // Modes
       contentEl.innerHTML += `
         <section class="card">
           <div class="title">Modes</div>
           <div class="grid-auto">
-            ${(data.modes || []).map(m => `
+            ${(data.modes||[]).map(m=>`
               <div>
                 <b>${m.name}</b><br/>
                 Kills: ${m.kills} &nbsp; KPM: ${m.kpm}<br/>
                 W/L: ${m.wl}% &nbsp; Wins: ${m.wins} • Losses: ${m.losses}<br/>
                 Time: ${m.time} hrs
-              </div>
-            `).join("")}
+              </div>`).join("")}
           </div>
-        </section>
-      `;
+        </section>`;
 
       // Weapons
       contentEl.innerHTML += `
         <section class="card">
           <div class="title">Top Weapons</div>
           <div class="grid-auto">
-            ${(data.weapons || []).map(w => `
+            ${(data.weapons||[]).map(w=>`
               <div>
                 <b>${w.name}</b><br/>
                 Kills: ${w.kills}<br/>
                 Accuracy: ${w.acc}<br/>
                 KPM: ${w.kpm}
-              </div>
-            `).join("")}
+              </div>`).join("")}
           </div>
-        </section>
-      `;
+        </section>`;
 
       // Gadgets
       contentEl.innerHTML += `
         <section class="card">
           <div class="title">Top Gadgets</div>
           <div class="grid-auto">
-            ${(data.gadgets || []).map(g => `
+            ${(data.gadgets||[]).map(g=>`
               <div>
                 <b>${g.name}</b><br/>
                 Kills: ${g.kills}<br/>
                 KPM: ${g.kpm}<br/>
                 Time: ${g.hours} hrs
-              </div>
-            `).join("")}
+              </div>`).join("")}
           </div>
-        </section>
-      `;
+        </section>`;
 
-      // Player footer
+      // Footer
       contentEl.innerHTML += `
-        <section class="card text-center text-slate-300">
-          Player: <b>${data.player?.name ?? tagEl.value}</b> (${data.player?.platform ?? platformEl.value}) • Hours: ${data.player?.hours ?? "—"}
-        </section>
-      `;
+        <section class="card text-center text-slate-200/90">
+          Player: <b>${data.player?.name ?? tagEl.value}</b> (${data.player?.platform ?? getPlatform()}) • Hours: ${data.player?.hours ?? "—"}
+        </section>`;
     }
 
-    // first load (and start polling)
-    load();
-    startPolling();
+    // initial load + polling
+    (function init(){
+      const p = getPlatform(); const t = tagEl.value;
+      load(p,t); startPolling(p,t);
+    })();
   </script>
 </body>
 </html>
