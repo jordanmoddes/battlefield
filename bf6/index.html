@@ -12,163 +12,173 @@
   <!-- Tailwind -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- html2canvas for Snip -->
-  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script>
+  // ---------- Helpers ----------
+  function buildApiUrl(platform, name){
+    const params = new URLSearchParams({
+      name,
+      platform,
+      lang:"en-us"
+    });
+    return "https://api.gametools.network/bf6/stats/?" + params.toString();
+  }
+  function fmtNum(x){
+    if (x === undefined || x === null || isNaN(x)) return "—";
+    return Number(x).toLocaleString();
+  }
+  function fmtFloat(x, digits=2){
+    if (x === undefined || x === null || isNaN(x)) return "—";
+    return Number(x).toFixed(digits);
+  }
+  function fmtPercentString(str){
+    if (!str && str !== 0) return "—";
+    return String(str);
+  }
+  function fmtSeconds(sec){
+    if (!sec && sec !== 0) return "—";
+    const s = Number(sec);
+    const h = Math.floor(s/3600);
+    const m = Math.floor((s%3600)/60);
+    if (h === 0 && m === 0) return s + "s";
+    return h + "h " + m + "m";
+  }
+  function kmFromUnits(x){
+    if (!x && x !== 0) return "—";
+    return (Number(x)/1000).toFixed(1) + " km";
+  }
 
-  <style>
-    :root{
-      --bf-accent:#ff6a00;
-      --bg-overlay: rgba(10,18,32,.90);
-      --card-bg: rgba(255,255,255,.11);
-      --card-border: rgba(255,255,255,.18);
-      --text:#f8fafc;
-      --sub:#e5e7eb;
-      --title:#93c5fd;
-      --nav-bg1: rgba(7,11,20,.75);
-      --nav-bg2: rgba(7,11,20,.35);
-      --rank-top:#84cc16;
-      --rank-bottom:#ef4444;
-    }
-    body.light{
-      --bg-overlay: rgba(255,255,255,.60);
-      --card-bg: rgba(0,0,0,.04);
-      --card-border: rgba(15,23,42,.20);
-      --text:#0b1220;
-      --sub:#374151;
-      --title:#1d4ed8;
-      --nav-bg1: rgba(255,255,255,.9);
-      --nav-bg2: rgba(255,255,255,.6);
-    }
-    body{
-      position:relative;
-      min-height:100vh;
-      color:var(--text);
-      background:
-        linear-gradient(180deg, var(--bg-overlay), var(--bg-overlay)),
-        url("https://assetsio.gnwcdn.com/battlefield-6-2.jpg?width=690&quality=85&format=jpg&dpr=3&auto=webp")
-          center/cover no-repeat fixed;
-      font-family: system-ui,-apple-system,Segoe UI,Roboto,Inter,"Helvetica Neue",Arial,"Noto Sans","Apple Color Emoji","Segoe UI Emoji";
-      -webkit-tap-highlight-color: transparent;
-      transition: background-color .2s ease, color .2s ease;
-    }
+  const themeBtn   = document.getElementById("themeBtn");
+  const shareBtn   = document.getElementById("shareBtn");
+  const snipBtn    = document.getElementById("snipBtn");
+  const formEl     = document.getElementById("controls");
+  const tagEl      = document.getElementById("tag");
+  const updatedEl  = document.getElementById("updated");
+  const jsonEl     = document.getElementById("json");
+  const statusEl   = document.getElementById("status");
+  const contentEl  = document.getElementById("content");
 
-    /* JM watermark over the BF6 background */
-    .jm-watermark{
-      position:fixed;
-      inset:0;
-      background:
-        url("/assets/Signature_BlackTP.png")
-        center/38% auto no-repeat;
-      opacity:0.5;
-      pointer-events:none;
-      z-index:0;
-    }
+  // ---------- Theme ----------
+  const savedTheme = localStorage.getItem("bf6-theme");
+  if (savedTheme === "light") {
+    document.body.classList.add("light");
+    themeBtn.textContent = "Dark";
+  }
+  themeBtn.addEventListener("click", () => {
+    document.body.classList.toggle("light");
+    const light = document.body.classList.contains("light");
+    themeBtn.textContent = light ? "Dark" : "Light";
+    localStorage.setItem("bf6-theme", light ? "light" : "dark");
+  });
 
-    /* Ensure actual content sits above watermark */
-    .page-shell{
-      position:relative;
-      z-index:1;
+  // ---------- Share ----------
+  shareBtn.addEventListener("click", async () => {
+    try {
+      await navigator.clipboard.writeText(location.href);
+      const old = shareBtn.textContent;
+      shareBtn.textContent = "Copied!";
+      setTimeout(() => shareBtn.textContent = old, 1200);
+    } catch {
+      alert("Could not copy. Please copy from the address bar.");
     }
+  });
 
-    .card{
-      background: var(--card-bg);
-      border:1px solid var(--card-border);
-      border-radius:16px;
-      padding:16px;
+  // ---------- Snip ----------
+  snipBtn.addEventListener("click", async () => {
+    try {
+      const canvas = await html2canvas(document.body, {
+        useCORS:true,
+        logging:false,
+        windowWidth:document.documentElement.scrollWidth,
+        windowHeight:document.documentElement.scrollHeight
+      });
+      canvas.toBlob(async (blob) => {
+        try {
+          await navigator.clipboard.write([
+            new ClipboardItem({ "image/png": blob })
+          ]);
+          const old = snipBtn.textContent;
+          snipBtn.textContent = "Snipped!";
+          setTimeout(() => snipBtn.textContent = old, 1200);
+        } catch {
+          const a = document.createElement("a");
+          a.href = URL.createObjectURL(blob);
+          a.download = "bf6-dashboard.png";
+          a.click();
+          URL.revokeObjectURL(a.href);
+        }
+      });
+    } catch (e) {
+      console.error(e);
+      alert("Screenshot failed. Try again.");
     }
-    .card-tight{
-      padding:12px 14px;
-    }
-    .grid-auto{
-      display:grid;
-      grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
-      gap:10px;
-    }
-    .title{
-      color:var(--title);
-      font-weight:900;
-      font-size:1.05rem;
-      margin-bottom:.5rem;
-      letter-spacing:.03em;
-    }
-    .nav{
-      backdrop-filter: blur(6px);
-      background: linear-gradient(180deg, var(--nav-bg1), var(--nav-bg2));
-      border-bottom:1px solid var(--card-border);
-    }
-    .nav a{ color:var(--sub) }
-    .nav .brand{ font-weight:900; letter-spacing:.06em }
-    .nav .icon-btn{
-      background: var(--card-bg);
-      border:1px solid var(--card-border);
-      padding:.55rem .9rem;
-      border-radius:.7rem;
-      font-weight:700;
-      color:var(--text);
-      font-size:.8rem;
-    }
-    .nav .icon-btn:hover{ background: rgba(255,255,255,.12) }
+  });
 
-    .chip{
-      background: var(--card-bg);
-      border:1px solid var(--card-border);
-      padding:.4rem .7rem;
-      border-radius:.7rem;
-      font-size:.8rem;
-    }
-    .btn{
-      background:var(--bf-accent);
-      color:#0b0f1a;
-      font-weight:800;
-      letter-spacing:.02em;
-      padding:.7rem 1.4rem;
-      border-radius:9999px;
-      box-shadow:0 8px 24px rgba(255,106,0,.18);
-      min-width:9rem;
-      transition: transform .06s ease, filter .06s ease;
-      touch-action: manipulation;
-    }
-    .btn:hover{ filter:brightness(1.05); transform:translateY(-1px) }
-    .btn:active{ transform:translateY(0) }
+  // ---------- URL defaults (PS5 / psn) ----------
+  const params = new URLSearchParams(location.search);
+  const defaultTag = params.get("tag") || "notJMODsuspended";
+  const defaultPlatform = params.get("platform") || "psn";
 
-    .radio{
-      appearance:none;
-      width:22px;
-      height:22px;
-      border:2px solid var(--title);
-      border-radius:9999px;
-      display:inline-block;
-      position:relative;
-    }
-    .radio:checked::after{
-      content:"";
-      position:absolute;
-      inset:4px;
-      border-radius:9999px;
-      background:var(--title);
-    }
+  tagEl.value = defaultTag;
+  (document.getElementById(defaultPlatform) || document.getElementById("psn")).checked = true;
 
-    .rank-top{ color:var(--rank-top) }
-    .rank-bottom{ color:var(--rank-bottom) }
+  function getPlatform(){
+    const r = document.querySelector("input[name='platform']:checked");
+    return r ? r.value : "psn";
+  }
 
-    .stat-label{
-      font-size:.7rem;
-      text-transform:uppercase;
-      letter-spacing:.08em;
-      color:var(--sub);
+  // ---------- Dashboard render (same as before) ----------
+  function renderDashboard(data, platform){
+    // ... this is the SAME big renderDashboard function I gave you.
+    // Keep your existing renderDashboard here unchanged.
+  }
+
+  // ---------- Load from API ----------
+  async function loadStats(platform, tag){
+    const url = buildApiUrl(platform, tag);
+    statusEl.textContent = "Loading…";
+    jsonEl.textContent = "Loading from " + url;
+    contentEl.innerHTML = "";
+
+    try{
+      const res = await fetch(url, { cache:"no-store" });
+      if(!res.ok){
+        const text = await res.text().catch(()=> "");
+        throw new Error(text || ("HTTP " + res.status));
+      }
+      const data = await res.json();
+      jsonEl.textContent = JSON.stringify(data, null, 2);
+      updatedEl.textContent = new Date().toLocaleTimeString();
+      statusEl.textContent = "OK";
+      renderDashboard(data, platform);
+    }catch(err){
+      console.error(err);
+      statusEl.textContent = "Error";
+      updatedEl.textContent = "—";
+      jsonEl.textContent = "Error loading from GameTools:\n\n" + (err.message || String(err));
+      contentEl.innerHTML = "";
     }
-    .stat-value{
-      font-weight:600;
-      font-size:1rem;
-    }
-    .json-output{
-      font-family: ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;
-      font-size:.78rem;
-      white-space:pre-wrap;
-      word-break:break-word;
-      max-height:420px;
-      overflow:auto;
-    }
-  </style>
+  }
+
+  // ---------- FORM SUBMIT (THIS IS THE IMPORTANT FIX) ----------
+  formEl.addEventListener("submit", (e) => {
+    e.preventDefault();                         // stop page reload
+    const platform = getPlatform();
+    const tag = (tagEl.value || "").trim() || "notJMODsuspended";
+
+    // update URL for sharing
+    const qs = new URLSearchParams({ platform, tag }).toString();
+    history.replaceState(null, "", "?" + qs);
+
+    // actually load stats
+    loadStats(platform, tag);
+  });
+
+  // ---------- Auto-load on first visit ----------
+  if (defaultTag) {
+    loadStats(defaultPlatform, defaultTag);
+  }
+</script>
+
 </head>
 
 <body class="pb-12">
