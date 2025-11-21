@@ -1,254 +1,388 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BF6 Live Stats Dashboard - Jordan Moddes</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 20px;
-            min-height: 100vh;
-            color: #ffffff;
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0b1220">
 
-            /* Your signature backgrounds */
-            background: #0a0a0a 
-                        url("https://raw.githubusercontent.com/jordanmoddes/jordanmoddes.github.io/main/assets/Signature_BlackTP.png") 
-                        center/38% auto no-repeat fixed;
+  <!-- Tab title + JM favicon -->
+  <title>BF6 Stats</title>
+  <!-- Use your local asset, not a GitHub blob -->
+  <link rel="icon" type="image/png" href="/assets/Signature_WhiteTP.png" />
 
-            /* Light mode override (if user prefers light) */
-            @media (prefers-color-scheme: light) {
-                background: #ffffff 
-                            url("https://raw.githubusercontent.com/jordanmoddes/jordanmoddes.github.io/main/assets/Signature_WhiteTP.png") 
-                            center/38% auto no-repeat fixed;
-                color: #000000;
-            }
-        }
+  <!-- Tailwind -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- html2canvas for Snip -->
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 
-        header {
-            text-align: center;
-            margin-bottom: 30px;
-        }
-        #logo {
-            width: 180px;
-            height: auto;
-            margin-bottom: 10px;
-        }
-        h1 {
-            font-size: 2.8em;
-            margin: 10px 0;
-            text-shadow: 0 0 20px rgba(0,0,0,0.7);
-        }
-        .subtitle {
-            font-size: 1.3em;
-            color: #00ff9d;
-            margin-top: 5px;
-            font-weight: bold;
-        }
-        .search-container {
-            margin-bottom: 40px;
-            text-align: center;
-        }
-        #playerInput, #platformSelect {
-            padding: 14px;
-            font-size: 18px;
-            border: 2px solid #333;
-            border-radius: 8px;
-            background-color: rgba(30,30,30,0.9);
-            color: #fff;
-        }
-        #platformSelect {
-            margin-left: 12px;
-        }
-        button {
-            padding: 14px 28px;
-            font-size: 18px;
-            background: linear-gradient(135deg, #00ff9d, #00b86e);
-            color: black;
-            font-weight: bold;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            margin-left: 12px;
-            transition: all 0.3s;
-        }
-        button:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 10px 20px rgba(0,255,157,0.4);
-        }
-        #loading {
-            display: none;
-            color: #00ff9d;
-            font-size: 1.2em;
-            margin-top: 15px;
-        }
-        #error {
-            display: none;
-            color: #ff3366;
-            background: rgba(255,0,0,0.1);
-            padding: 15px;
-            border-radius: 10px;
-            max-width: 600px;
-            margin: 20px auto;
-            text-align: center;
-        }
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-            gap: 22px;
-            max-width: 1300px;
-            margin: 0 auto;
-        }
-        .stat-card {
-            background: rgba(20,20,20,0.85);
-            backdrop-filter: blur(10px);
-            border: 1px solid #333;
-            border-radius: 15px;
-            padding: 25px;
-            text-align: center;
-            transition: transform 0.3s;
-        }
-        .stat-card:hover {
-            transform: translateY(-8px);
-        }
-        .stat-value {
-            font-size: 2.6em;
-            font-weight: bold;
-            color: #00ff9d;
-            margin: 12px 0;
-        }
-        .stat-label {
-            color: #888;
-            text-transform: uppercase;
-            font-size: 0.9em;
-            letter-spacing: 1.5px;
-        }
-        .avatar {
-            width: 100px;
-            height: 100px;
-            border-radius: 50%;
-            border: 4px solid #00ff9d;
-            box-shadow: 0 0 20px rgba(0,255,157,0.6);
-        }
-        .player-info {
-            text-align: center;
-            margin-bottom: 30px;
-        }
-        .footer {
-            margin-top: 80px;
-            text-align: center;
-            color: #666;
-            font-size: 0.9em;
-        }
-        @media (max-width: 768px) {
-            #playerInput, #platformSelect, button {
-                width: 100%;
-                margin: 8px 0;
-            }
-        }
-    </style>
+  <style>
+    :root{
+      --bf-accent:#ff6a00;
+      --bg-overlay: rgba(10,18,32,.90);
+      --card-bg: rgba(255,255,255,.11);
+      --card-border: rgba(255,255,255,.18);
+      --text:#f8fafc;
+      --sub:#e5e7eb;
+      --title:#93c5fd;
+      --nav-bg1: rgba(7,11,20,.75);
+      --nav-bg2: rgba(7,11,20,.35);
+    }
+    body.light{
+      --bg-overlay: rgba(255,255,255,.55);
+      --card-bg: rgba(0,0,0,.06);
+      --card-border: rgba(0,0,0,.18);
+      --text:#0b1220;
+      --sub:#374151;
+      --title:#1d4ed8;
+      --nav-bg1: rgba(255,255,255,.9);
+      --nav-bg2: rgba(255,255,255,.6);
+    }
+    body{
+      position:relative;
+      min-height:100vh;
+      color:var(--text);
+      background:
+        linear-gradient(180deg, var(--bg-overlay), var(--bg-overlay)),
+        url("https://assetsio.gnwcdn.com/battlefield-6-2.jpg?width=690&quality=85&format=jpg&dpr=3&auto=webp")
+          center/cover no-repeat fixed;
+      font-family: system-ui,-apple-system,Segoe UI,Roboto,Inter,"Helvetica Neue",Arial,"Noto Sans","Apple Color Emoji","Segoe UI Emoji";
+      -webkit-tap-highlight-color: transparent;
+      transition: background-color .2s ease, color .2s ease;
+    }
+
+    /* JM watermark over the BF6 background */
+    .jm-watermark{
+      position:fixed;
+      inset:0;
+      background:
+        url("/assets/Signature_BlackTP.png")
+        center/38% auto no-repeat;
+      opacity:0.5;             /* ~50% opacity */
+      pointer-events:none;
+      z-index:0;
+    }
+
+    /* Ensure actual content sits above watermark */
+    .page-shell{
+      position:relative;
+      z-index:1;
+    }
+
+    .card{
+      background: var(--card-bg);
+      border:1px solid var(--card-border);
+      border-radius:16px;
+      padding:16px;
+    }
+    .nav{
+      backdrop-filter: blur(6px);
+      background: linear-gradient(180deg, var(--nav-bg1), var(--nav-bg2));
+      border-bottom:1px solid var(--card-border);
+    }
+    .nav a{ color:var(--sub) }
+    .nav .brand{ font-weight:900; letter-spacing:.06em }
+    .nav .icon-btn{
+      background: var(--card-bg);
+      border:1px solid var(--card-border);
+      padding:.55rem .9rem;
+      border-radius:.7rem;
+      font-weight:700;
+      color:var(--text);
+      font-size:.8rem;
+    }
+    .nav .icon-btn:hover{ background: rgba(255,255,255,.12) }
+
+    .chip{
+      background: var(--card-bg);
+      border:1px solid var(--card-border);
+      padding:.5rem .7rem;
+      border-radius:.7rem;
+      font-size:.8rem;
+    }
+    .btn{
+      background:var(--bf-accent);
+      color:#0b0f1a;
+      font-weight:800;
+      letter-spacing:.02em;
+      padding:.7rem 1.4rem;
+      border-radius:9999px;
+      box-shadow:0 8px 24px rgba(255,106,0,.18);
+      min-width:9rem;
+      transition: transform .06s ease, filter .06s ease;
+      touch-action: manipulation;
+    }
+    .btn:hover{ filter:brightness(1.05); transform:translateY(-1px) }
+    .btn:active{ transform:translateY(0) }
+
+    .radio{
+      appearance:none;
+      width:22px;
+      height:22px;
+      border:2px solid var(--title);
+      border-radius:9999px;
+      display:inline-block;
+      position:relative;
+    }
+    .radio:checked::after{
+      content:"";
+      position:absolute;
+      inset:4px;
+      border-radius:9999px;
+      background:var(--title);
+    }
+
+    .json-output{
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size: .8rem;
+      white-space: pre-wrap;
+      word-break: break-word;
+      max-height: 480px;
+      overflow:auto;
+    }
+  </style>
 </head>
-<body>
 
-    <header>
-        <img id="logo" src="https://raw.githubusercontent.com/jordanmoddes/jordanmoddes.github.io/main/assets/logo.png" alt="Jordan Moddes Logo">
-        <h1>BF6 LIVE STATS</h1>
-        <p class="subtitle">Instant • Free • Powered by GameTools API — Jordan Moddes</p>
+<body class="pb-12">
+  <!-- Watermark layer -->
+  <div class="jm-watermark"></div>
+
+  <!-- Everything else sits above watermark -->
+  <div class="page-shell">
+    <!-- Top Navigation -->
+    <nav class="nav sticky top-0 z-50">
+      <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+        <a href="https://jordanmoddes.com" target="_blank" rel="noopener" class="brand text-lg">JMOD</a>
+        <div class="flex items-center gap-2">
+          <a class="icon-btn" href="https://gametools.network/stats" target="_blank" rel="noopener">GameTools</a>
+          <button id="shareBtn" class="icon-btn">Share</button>
+          <button id="snipBtn" class="icon-btn">Snip</button>
+          <button id="themeBtn" class="icon-btn">Light</button>
+        </div>
+      </div>
+    </nav>
+
+    <header class="text-center mt-6 mb-6 px-4">
+      <h1 class="text-3xl md:text-4xl font-extrabold tracking-tight" style="color:var(--title)">
+        Battlefield 6 — GameTools Stats
+      </h1>
+      <p class="text-sm" style="color:var(--sub)">
+        Pick a platform, enter a gamer tag, then hit
+        <b style="color:var(--bf-accent)">LOAD</b>. Data comes directly from
+        <span class="font-semibold">api.gametools.network</span>.
+      </p>
     </header>
 
-    <div class="search-container">
-        <input type="text" id="playerInput" placeholder="Enter BF6 Player Name (exact!)" required>
-        <select id="platformSelect">
-            <option value="pc">PC (Origin/Steam)</option>
-            <option value="psn">PlayStation</option>
-            <option value="xbl">Xbox</option>
-        </select>
-        <button onclick="fetchStats()">GET STATS</button>
-        <div id="loading">Fetching live BF6 stats...</div>
-    </div>
-
-    <div id="error"></div>
-
-    <div id="playerStats" style="display: none;">
-        <div class="player-info">
-            <img id="avatar" class="avatar" src="" alt="Avatar">
-            <h2 id="playerName"></h2>
-            <p id="playerLevel"></p>
+    <!-- Controls -->
+    <form id="controls" class="max-w-6xl mx-auto grid grid-cols-1 gap-3 mb-6 px-4">
+      <div class="card grid grid-cols-1 md:grid-cols-[1.1fr_auto_1.2fr_auto] gap-3 items-end">
+        <!-- Platform radios -->
+        <div>
+          <div class="text-xs mb-1" style="color:var(--sub);">Platform</div>
+          <div class="flex flex-wrap items-center gap-3">
+            <label class="flex items-center gap-2 cursor-pointer chip select-none">
+              <input class="radio" type="radio" name="platform" value="pc" id="pc" />
+              <span class="font-semibold">PC</span>
+            </label>
+            <label class="flex items-center gap-2 cursor-pointer chip select-none">
+              <input class="radio" type="radio" name="platform" value="psn" id="psn" />
+              <span class="font-semibold">PlayStation</span>
+            </label>
+            <label class="flex items-center gap-2 cursor-pointer chip select-none">
+              <input class="radio" type="radio" name="platform" value="xboxone" id="xbox" />
+              <span class="font-semibold">Xbox</span>
+            </label>
+          </div>
         </div>
 
-        <div class="stats-grid" id="statsGrid"></div>
-    </div>
+        <!-- LOAD button -->
+        <div class="flex items-end justify-center">
+          <button id="loadBtn" type="submit" class="btn">LOAD</button>
+        </div>
 
-    <div class="footer">
-        <p>Built & Maintained by <strong>Jordan Moddes</strong> • Data via <a href="https://api.gametools.network" style="color:#00ff9d">GameTools BF6 API</a> • Nov 20, 2025</p>
-    </div>
+        <!-- Gamer tag -->
+        <div>
+          <div class="text-xs mb-1" style="color:var(--sub);">Gamer Tag</div>
+          <input id="tag" class="w-full rounded-md px-3 py-3 text-slate-900"
+                 inputmode="text" autocomplete="off" autocapitalize="none"
+                 placeholder="Enter gamer tag" />
+        </div>
 
-    <script>
-        async function fetchStats() {
-            const playerName = document.getElementById('playerInput').value.trim();
-            const platform = document.getElementById('platformSelect').value;
-            if (!playerName) return showError('Enter an exact player name!');
+        <!-- Last updated -->
+        <div class="flex items-end justify-start md:justify-end">
+          <div class="chip text-xs" style="color:var(--sub)">
+            Last updated: <span id="updated">—</span>
+          </div>
+        </div>
+      </div>
+    </form>
 
-            document.getElementById('loading').style.display = 'block';
-            document.getElementById('error').style.display = 'none';
-            document.getElementById('playerStats').style.display = 'none';
+    <!-- Output -->
+    <main class="max-w-6xl mx-auto px-4 space-y-4">
+      <section id="summary" class="card text-sm hidden">
+        <div class="font-semibold mb-1" style="color:var(--title)">Summary</div>
+        <div id="summaryText" style="color:var(--sub)">—</div>
+      </section>
 
-            try {
-                // Fixed: Use actual GameTools BF6 endpoint pattern (search first, then stats)
-                // Based on docs/GitHub: /bf6/player/{platform}/{name} or search variant
-                let response = await fetch(`https://api.gametools.network/bf6/player/${platform}/${encodeURIComponent(playerName)}`);
-                
-                if (!response.ok && response.status === 404) {
-                    // Fallback: Try search endpoint if direct fails
-                    response = await fetch(`https://api.gametools.network/bf6/players/search?platform=${platform}&q=${encodeURIComponent(playerName)}`);
-                }
-                
-                if (!response.ok) throw new Error(`API Error ${response.status} - Try exact name/platform (e.g., 'shroud' on PC)`);
-                
-                const data = await response.json();
-                const player = Array.isArray(data) ? data[0] : data;
-                
-                if (!player || player.error) throw new Error('Player not found or inactive (suspended?). Try a live BF6 player.');
+      <section id="jsonCard" class="card">
+        <div class="flex items-center justify-between mb-2">
+          <div class="font-semibold" style="color:var(--title)">Raw GameTools JSON</div>
+          <div id="status" class="text-xs" style="color:var(--sub)">Idle</div>
+        </div>
+        <pre id="json" class="json-output" style="color:var(--sub)">No data loaded yet.</pre>
+      </section>
+    </main>
 
-                // Map to actual API fields (adapt from docs: e.g., playerName, rank, killsTotal, etc.)
-                document.getElementById('playerName').textContent = player.playerName || player.userName || playerName;
-                document.getElementById('playerLevel').textContent = `Rank ${player.rank || '-'} • Level ${player.level || '-'}`;
-                document.getElementById('avatar').src = player.avatarUrl || `https://via.placeholder.com/100?text=${playerName.charAt(0)}`;
+    <footer class="text-center text-xs mt-10 px-4" style="color:var(--sub)">
+      Powered directly by GameTools BF6 API • JM overlay &amp; layout by Jmod Co.
+    </footer>
+  </div>
 
-                const stats = [
-                    { label: 'Kills', value: player.killsTotal?.toLocaleString() || 0 },
-                    { label: 'Deaths', value: player.deathsTotal?.toLocaleString() || 0 },
-                    { label: 'K/D Ratio', value: player.kdRatio?.toFixed(2) || (player.killsTotal / (player.deathsTotal || 1)).toFixed(2) },
-                    { label: 'Wins', value: player.wins?.toLocaleString() || 0 },
-                    { label: 'Win %', value: player.winPercentage ? player.winPercentage.toFixed(1) + '%' : '0%' },
-                    { label: 'Time Played', value: player.timePlayed ? (player.timePlayed / 3600).toFixed(0) + 'h' : '0h' },
-                    { label: 'SPM', value: player.scorePerMinute?.toFixed(0) || 0 },
-                    { label: 'Skill', value: player.skillValue?.toLocaleString() || 0 }
-                ];
+  <script>
+    // ===== GameTools BF6 API helper =====
+    // NOTE: If GameTools changes param names, just edit this one function.
+    function buildApiUrl(platform, name) {
+      const params = new URLSearchParams({
+        name: name,
+        platform: platform,
+        lang: "en-us"
+      });
+      // Documented BF6 path in GameTools Swagger: /bf6/stats/
+      // Example pattern (similar to older titles): https://api.gametools.network/bf6/stats/?name=TAG&platform=pc&lang=en-us
+      return "https://api.gametools.network/bf6/stats/?" + params.toString();
+    }
 
-                document.getElementById('statsGrid').innerHTML = stats.map(s => `
-                    <div class="stat-card">
-                        <div class="stat-value">${s.value}</div>
-                        <div class="stat-label">${s.label}</div>
-                    </div>
-                `).join('');
+    const themeBtn   = document.getElementById("themeBtn");
+    const shareBtn   = document.getElementById("shareBtn");
+    const snipBtn    = document.getElementById("snipBtn");
+    const formEl     = document.getElementById("controls");
+    const tagEl      = document.getElementById("tag");
+    const updatedEl  = document.getElementById("updated");
+    const jsonEl     = document.getElementById("json");
+    const statusEl   = document.getElementById("status");
+    const summaryEl  = document.getElementById("summary");
+    const summaryTxt = document.getElementById("summaryText");
 
-                document.getElementById('playerStats').style.display = 'block';
+    // Theme handling (default dark)
+    const savedTheme = localStorage.getItem("bf6-theme");
+    if (savedTheme === "light") {
+      document.body.classList.add("light");
+      themeBtn.textContent = "Dark";
+    }
+    themeBtn.addEventListener("click", () => {
+      document.body.classList.toggle("light");
+      const light = document.body.classList.contains("light");
+      themeBtn.textContent = light ? "Dark" : "Light";
+      localStorage.setItem("bf6-theme", light ? "light" : "dark");
+    });
 
-            } catch (err) {
-                showError(err.message);
-            } finally {
-                document.getElementById('loading').style.display = 'none';
-            }
+    // Share current URL
+    shareBtn.addEventListener("click", async () => {
+      try {
+        await navigator.clipboard.writeText(location.href);
+        const old = shareBtn.textContent;
+        shareBtn.textContent = "Copied!";
+        setTimeout(() => shareBtn.textContent = old, 1200);
+      } catch {
+        alert("Could not copy. Please copy from the address bar.");
+      }
+    });
+
+    // Snip screenshot
+    snipBtn.addEventListener("click", async () => {
+      try {
+        const canvas = await html2canvas(document.body, {
+          useCORS: true,
+          logging: false,
+          windowWidth: document.documentElement.scrollWidth,
+          windowHeight: document.documentElement.scrollHeight
+        });
+        canvas.toBlob(async (blob) => {
+          try {
+            await navigator.clipboard.write([
+              new ClipboardItem({ "image/png": blob })
+            ]);
+            const old = snipBtn.textContent;
+            snipBtn.textContent = "Snipped!";
+            setTimeout(() => snipBtn.textContent = old, 1200);
+          } catch {
+            const a = document.createElement("a");
+            a.href = URL.createObjectURL(blob);
+            a.download = "bf6-stats.png";
+            a.click();
+            URL.revokeObjectURL(a.href);
+          }
+        });
+      } catch (e) {
+        console.error(e);
+        alert("Screenshot failed. Try again.");
+      }
+    });
+
+    // Read defaults from URL (?platform=pc&tag=NAME)
+    const params = new URLSearchParams(location.search);
+    const defaultTag = params.get("tag") || "notJMODsuspended";
+    const defaultPlatform = params.get("platform") || "pc";
+
+    tagEl.value = defaultTag;
+    (document.getElementById(defaultPlatform) || document.getElementById("pc")).checked = true;
+
+    function getPlatform() {
+      const r = document.querySelector("input[name='platform']:checked");
+      return r ? r.value : "pc";
+    }
+
+    async function loadStats(platform, tag) {
+      const url = buildApiUrl(platform, tag);
+      statusEl.textContent = "Loading…";
+      jsonEl.textContent = "Loading from " + url;
+      summaryEl.classList.add("hidden");
+
+      try {
+        const res = await fetch(url, { cache: "no-store" });
+        if (!res.ok) {
+          const text = await res.text().catch(() => "");
+          throw new Error(text || ("HTTP " + res.status));
         }
+        const data = await res.json();
 
-        function showError(msg) {
-            document.getElementById('error').textContent = msg;
-            document.getElementById('error').style.display = 'block';
+        // Pretty-print JSON
+        jsonEl.textContent = JSON.stringify(data, null, 2);
+        updatedEl.textContent = new Date().toLocaleTimeString();
+        statusEl.textContent = "OK";
+
+        // Very light summary if some obvious fields exist
+        let bits = [];
+        if (data.username || data.name) bits.push("Player: " + (data.username || data.name));
+        if (data.kd !== undefined)          bits.push("K/D: " + data.kd);
+        if (data.kpm !== undefined)         bits.push("KPM: " + data.kpm);
+        if (data.wins !== undefined && data.losses !== undefined) {
+          bits.push("Wins: " + data.wins + " • Losses: " + data.losses);
         }
+        if (bits.length) {
+          summaryTxt.textContent = bits.join(" • ");
+          summaryEl.classList.remove("hidden");
+        }
+      } catch (err) {
+        console.error(err);
+        statusEl.textContent = "Error";
+        updatedEl.textContent = "—";
+        jsonEl.textContent = "Error loading from GameTools:\n\n" + (err.message || String(err));
+      }
+    }
 
-        document.getElementById('playerInput').addEventListener('keypress', e => e.key === 'Enter' && fetchStats());
-    </script>
+    formEl.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const platform = getPlatform();
+      const tag = (tagEl.value || "").trim() || "notJMODsuspended";
+
+      history.replaceState(null, "", "?" + new URLSearchParams({ platform, tag }).toString());
+      loadStats(platform, tag);
+    });
+
+    // Optional: auto-load on first visit using defaults
+    if (defaultTag) {
+      loadStats(defaultPlatform, defaultTag);
+    }
+  </script>
 </body>
 </html>
