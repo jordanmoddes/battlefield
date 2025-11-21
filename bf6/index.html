@@ -85,27 +85,26 @@
             document.getElementById('playerStats').style.display = 'none';
 
             try {
-                // Official GameTools BF2042 endpoint (free, no key)
                 const apiUrl = `https://api.gametools.network/bf2042/stats/?platform=${platform}&name=${encodeURIComponent(playerName)}`;
-                
-                // Use free CORS proxy to bypass browser blocks
                 const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(apiUrl)}`;
                 const response = await fetch(proxyUrl);
                 
-                if (!response.ok) throw new Error(`API Error ${response.status} - Player not found or private.`);
+                if (!response.ok) throw new Error(`API Error ${response.status}`);
 
                 const player = await response.json();
-                if (!player || player.error) throw new Error('Player not found (private/suspended?). Try "shroud" on PC.');
+                
+                // Check for empty/no data response (common for private/suspended)
+                if (!player || !player.userName || Object.keys(player).length < 5) {
+                    throw new Error(`No public stats found for "${playerName}" (private/suspended?). Enable "Share Usage Data" in BF6 settings. Try "shroud" on PC for live example.`);
+                }
 
-                // Map to real GameTools fields (confirmed from Swagger/Discord bots)
                 document.getElementById('playerName').textContent = player.userName || playerName;
-                document.getElementById('playerLevel').textContent = `Rank ${player.rank || '-'} • Level ${player.level || '-'}`;
+                document.getElementById('playerLevel').textContent = `Rank ${player.rank || 'N/A'} • Level ${player.level || 'N/A'}`;
                 document.getElementById('avatar').src = player.avatar || `https://via.placeholder.com/100?text=${playerName.charAt(0)}`;
 
-                // Calculate K/D if not direct
                 const kd = player.kdr || ((player.kills / (player.deaths || 1)) || 0).toFixed(2);
-                const winPct = player.winPercent || '0%';
-                const timeH = Math.round((player.secondsPlayed || 0) / 3600);
+                const winPct = player.winPercent ? player.winPercent.toFixed(1) + '%' : '0%';
+                const timeH = player.secondsPlayed ? Math.round(player.secondsPlayed / 3600) + 'h' : '0h';
 
                 const stats = [
                     { label: 'Kills', value: player.kills?.toLocaleString() || '0' },
@@ -113,7 +112,7 @@
                     { label: 'K/D Ratio', value: kd },
                     { label: 'Wins', value: player.wins?.toLocaleString() || '0' },
                     { label: 'Win %', value: winPct },
-                    { label: 'Time Played', value: `${timeH}h` },
+                    { label: 'Time Played', value: timeH },
                     { label: 'SPM', value: player.scorePerMinute?.toFixed(0) || '0' },
                     { label: 'Skill', value: player.skill?.toLocaleString() || '0' }
                 ];
@@ -128,40 +127,37 @@
                 document.getElementById('playerStats').style.display = 'block';
 
             } catch (err) {
-                // Fallback: Show demo stats if API fails (for showcase)
-                console.warn('API fallback to demo:', err);
-                setTimeout(() => {
-                    document.getElementById('loading').style.display = 'none';
-                    showDemoStats(playerName, platform);
-                }, 500);
+                showError(err.message);
+                // Fallback demo if no live data
+                setTimeout(() => showDemoStats(playerName, platform), 1000);
+            } finally {
+                document.getElementById('loading').style.display = 'none';
             }
         }
 
         function showDemoStats(name, platform) {
             const demoData = {
-                userName: name,
-                rank: Math.floor(Math.random() * 120) + 1,
-                level: Math.floor(Math.random() * 250) + 50,
-                avatar: `https://via.placeholder.com/100/333/fff?text=${name.charAt(0)}`,
-                kills: Math.floor(Math.random() * 60000) + 10000,
-                deaths: Math.floor(Math.random() * 25000) + 4000,
-                wins: Math.floor(Math.random() * 2500) + 800,
-                secondsPlayed: Math.floor(Math.random() * 2000) * 3600,
-                scorePerMinute: Math.floor(Math.random() * 400) + 120,
-                skill: Math.floor(Math.random() * 6000) + 1500
+                kills: Math.floor(Math.random() * 50000) + 10000,
+                deaths: Math.floor(Math.random() * 20000) + 5000,
+                wins: Math.floor(Math.random() * 1500) + 500,
+                secondsPlayed: Math.floor(Math.random() * 1500) * 3600,
+                scorePerMinute: Math.floor(Math.random() * 250) + 100,
+                skill: Math.floor(Math.random() * 4000) + 1000,
+                rank: Math.floor(Math.random() * 100) + 1,
+                level: Math.floor(Math.random() * 200) + 50
             };
             demoData.kdr = (demoData.kills / demoData.deaths).toFixed(2);
 
-            document.getElementById('playerName').textContent = `${demoData.userName} (${platform.toUpperCase()}) - Demo`;
+            document.getElementById('playerName').textContent = `${name} (${platform.toUpperCase()}) - Demo Mode`;
             document.getElementById('playerLevel').textContent = `Rank ${demoData.rank} • Level ${demoData.level}`;
-            document.getElementById('avatar').src = demoData.avatar;
+            document.getElementById('avatar').src = `https://via.placeholder.com/100/333/fff?text=${name.charAt(0)}`;
 
             const stats = [
                 { label: 'Kills', value: demoData.kills.toLocaleString() },
                 { label: 'Deaths', value: demoData.deaths.toLocaleString() },
                 { label: 'K/D Ratio', value: demoData.kdr },
                 { label: 'Wins', value: demoData.wins.toLocaleString() },
-                { label: 'Win %', value: '52.3%' }, // Static for demo
+                { label: 'Win %', value: '51.2%' },
                 { label: 'Time Played', value: `${Math.round(demoData.secondsPlayed / 3600)}h` },
                 { label: 'SPM', value: demoData.scorePerMinute },
                 { label: 'Skill', value: demoData.skill.toLocaleString() }
@@ -175,7 +171,6 @@
             `).join('');
 
             document.getElementById('playerStats').style.display = 'block';
-            showError('API hiccup—showing demo stats. Refresh & try "shroud" on PC for live!');
         }
 
         function showError(msg) {
@@ -185,8 +180,12 @@
 
         document.getElementById('playerInput').addEventListener('keypress', e => e.key === 'Enter' && fetchStats());
 
-        // Auto-fetch on load
-        window.onload = () => fetchStats();
+        // Auto-fetch live example on load
+        window.onload = () => {
+            document.getElementById('playerInput').value = 'shroud';
+            document.getElementById('platformSelect').value = 'pc';
+            fetchStats();
+        };
     </script>
 </body>
 </html>
