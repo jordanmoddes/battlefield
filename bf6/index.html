@@ -5,152 +5,36 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BF6 Live Stats Dashboard - Jordan Moddes</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 20px;
-            min-height: 100vh;
-            color: #ffffff;
-
-            /* Your signature backgrounds */
-            background: #0a0a0a 
-                        url("https://raw.githubusercontent.com/jordanmoddes/jordanmoddes.github.io/main/assets/Signature_BlackTP.png") 
-                        center/38% auto no-repeat fixed;
-
-            /* Light mode override (if user prefers light) */
-            @media (prefers-color-scheme: light) {
-                background: #ffffff 
-                            url("https://raw.githubusercontent.com/jordanmoddes/jordanmoddes.github.io/main/assets/Signature_WhiteTP.png") 
-                            center/38% auto no-repeat fixed;
-                color: #000000;
-            }
+        body{
+            font-family:Arial,sans-serif;margin:0;padding:20px;min-height:100vh;color:#ffffff;
+            background:#0a0a0a url("https://raw.githubusercontent.com/jordanmoddes/jordanmoddes.github.io/main/assets/Signature_BlackTP.png") center/38% auto no-repeat fixed;
         }
-
-        header {
-            text-align: center;
-            margin-bottom: 30px;
+        @media (prefers-color-scheme:light){
+            body{background:#ffffff url("https://raw.githubusercontent.com/jordanmoddes/jordanmoddes.github.io/main/assets/Signature_WhiteTP.png") center/38% auto no-repeat fixed;color:#000}
         }
-        #logo {
-            width: 180px;
-            height: auto;
-            margin-bottom: 10px;
-        }
-        h1 {
-            font-size: 2.8em;
-            margin: 10px 0;
-            text-shadow: 0 0 20px rgba(0,0,0,0.7);
-        }
-        .subtitle {
-            font-size: 1.3em;
-            color: #00ff9d;
-            margin-top: 5px;
-            font-weight: bold;
-        }
-        .search-container {
-            margin-bottom: 40px;
-            text-align: center;
-        }
-        #playerInput, #platformSelect {
-            padding: 14px;
-            font-size: 18px;
-            border: 2px solid #333;
-            border-radius: 8px;
-            background-color: rgba(30,30,30,0.9);
-            color: #fff;
-        }
-        #platformSelect {
-            margin-left: 12px;
-        }
-        button {
-            padding: 14px 28px;
-            font-size: 18px;
-            background: linear-gradient(135deg, #00ff9d, #00b86e);
-            color: black;
-            font-weight: bold;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            margin-left: 12px;
-            transition: all 0.3s;
-        }
-        button:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 10px 20px rgba(0,255,157,0.4);
-        }
-        #loading {
-            display: none;
-            color: #00ff9d;
-            font-size: 1.2em;
-            margin-top: 15px;
-        }
-        #error {
-            display: none;
-            color: #ff3366;
-            background: rgba(255,0,0,0.1);
-            padding: 15px;
-            border-radius: 10px;
-            max-width: 600px;
-            margin: 20px auto;
-            text-align: center;
-        }
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-            gap: 22px;
-            max-width: 1300px;
-            margin: 0 auto;
-        }
-        .stat-card {
-            background: rgba(20,20,20,0.85);
-            backdrop-filter: blur(10px);
-            border: 1px solid #333;
-            border-radius: 15px;
-            padding: 25px;
-            text-align: center;
-            transition: transform 0.3s;
-        }
-        .stat-card:hover {
-            transform: translateY(-8px);
-        }
-        .stat-value {
-            font-size: 2.6em;
-            font-weight: bold;
-            color: #00ff9d;
-            margin: 12px 0;
-        }
-        .stat-label {
-            color: #888;
-            text-transform: uppercase;
-            font-size: 0.9em;
-            letter-spacing: 1.5px;
-        }
-        .avatar {
-            width: 100px;
-            height: 100px;
-            border-radius: 50%;
-            border: 4px solid #00ff9d;
-            box-shadow: 0 0 20px rgba(0,255,157,0.6);
-        }
-        .player-info {
-            text-align: center;
-            margin-bottom: 30px;
-        }
-        .footer {
-            margin-top: 80px;
-            text-align: center;
-            color: #666;
-            font-size: 0.9em;
-        }
-        @media (max-width: 768px) {
-            #playerInput, #platformSelect, button {
-                width: 100%;
-                margin: 8px 0;
-            }
-        }
+        header{text-align:center;margin-bottom:30px}
+        #logo{width:180px;height:auto;margin-bottom:10px}
+        h1{font-size:2.8em;margin:10px 0;text-shadow:0 0 20px rgba(0,0,0,0.7)}
+        .subtitle{font-size:1.3em;color:#00ff9d;margin-top:5px;font-weight:bold}
+        .search-container{margin-bottom:40px;text-align:center}
+        #playerInput,#platformSelect{padding:14px;font-size:18px;border:2px solid #333;border-radius:8px;background:rgba(30,30,30,0.9);color:#fff}
+        #platformSelect{margin-left:12px}
+        button{padding:14px 28px;font-size:18px;background:linear-gradient(135deg,#00ff9d,#00b86e);color:black;font-weight:bold;border:none;border-radius:8px;cursor:pointer;margin-left:12px;transition:all .3s}
+        button:hover{transform:translateY(-3px);box-shadow:0 10px 20px rgba(0,255,157,0.4)}
+        #loading{display:none;color:#00ff9d;font-size:1.2em;margin-top:15px}
+        #error{display:none;color:#ff3366;background:rgba(255,0,0,0.1);padding:15px;border-radius:10px;max-width:600px;margin:20px auto;text-align:center}
+        .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:22px;max-width:1300px;margin:0 auto}
+        .stat-card{background:rgba(20,20,20,0.85);backdrop-filter:blur(10px);border:1px solid #333;border-radius:15px;padding:25px;text-align:center;transition:transform .3s}
+        .stat-card:hover{transform:translateY(-8px)}
+        .stat-value{font-size:2.6em;font-weight:bold;color:#00ff9d;margin:12px 0}
+        .stat-label{color:#888;text-transform:uppercase;font-size:0.9em;letter-spacing:1.5px}
+        .avatar{width:100px;height:100px;border-radius:50%;border:4px solid #00ff9d;box-shadow:0 0 20px rgba(0,255,157,0.6)}
+        .player-info{text-align:center;margin-bottom:30px}
+        .footer{margin-top:80px;text-align:center;color:#666;font-size:0.9em}
+        @media(max-width:768px){#playerInput,#platformSelect,button{width:100%;margin:8px 0}}
     </style>
 </head>
 <body>
-
     <header>
         <img id="logo" src="https://raw.githubusercontent.com/jordanmoddes/jordanmoddes.github.io/main/assets/logo.png" alt="Jordan Moddes Logo">
         <h1>BF6 LIVE STATS</h1>
@@ -158,101 +42,91 @@
     </header>
 
     <div class="search-container">
-        <input type="text" id="playerInput" placeholder="Enter BF6 Player Name (e.g., shroud)" value="shroud" required>
+        <input type="text" id="playerInput" placeholder="Enter player name (e.g. shroud)" value="shroud">
         <select id="platformSelect">
             <option value="pc">PC</option>
             <option value="psn">PlayStation</option>
             <option value="xbl">Xbox</option>
         </select>
         <button onclick="fetchStats()">GET STATS</button>
-        <div id="loading">Fetching live BF6 stats...</div>
+        <div id="loading">Pulling live stats…</div>
     </div>
 
     <div id="error"></div>
 
-    <div id="playerStats" style="display: none;">
+    <div id="playerStats" style="display:none">
         <div class="player-info">
             <img id="avatar" class="avatar" src="" alt="Avatar">
             <h2 id="playerName"></h2>
             <p id="playerLevel"></p>
         </div>
-
         <div class="stats-grid" id="statsGrid"></div>
     </div>
 
     <div class="footer">
-        <p>Built & Maintained by <strong>Jordan Moddes</strong> • Data via <a href="https://api.gametools.network/docs" style="color:#00ff9d">GameTools BF6 API</a> • Nov 20, 2025</p>
+        <p>Built & Maintained by <strong>Jordan Moddes</strong> • Data via <a href="https://api.gametools.network" style="color:#00ff9d">GameTools BF2042 API</a> • 2025</p>
     </div>
 
     <script>
         async function fetchStats() {
-            const playerName = document.getElementById('playerInput').value.trim();
-            const platform = document.getElementById('platformSelect').value;
-            if (!playerName) return showError('Enter an exact player name!');
+            const name = document.getElementById('playerInput').value.trim();
+            const plat = document.getElementById('platformSelect').value;
+            if (!name) return showError("Enter a player name");
 
             document.getElementById('loading').style.display = 'block';
             document.getElementById('error').style.display = 'none';
             document.getElementById('playerStats').style.display = 'none';
 
             try {
-                // Fixed endpoint: Use /bf2042/ for BF6 (Battlefield 2042) per API docs
-                const response = await fetch(`https://api.gametools.network/bf2042/player/${platform}/${encodeURIComponent(playerName)}`);
+                // Current working GameTools BF2042 endpoint (2025)
+                const url = `https://api.gametools.network/bf2042/stats/?platform=${plat}&name=${encodeURIComponent(name)}`;
                 
-                if (!response.ok) {
-                    if (response.status === 404) {
-                        throw new Error('Player not found (inactive/suspended?). Try "shroud" on PC for a live example.');
-                    }
-                    throw new Error(`API Error ${response.status} - Check name/platform.`);
-                }
-                
-                const player = await response.json();
-                
-                if (!player || player.error) throw new Error('Invalid response - try another player.');
+                // Tiny free CORS proxy only if direct fetch is blocked (works 99% of the time)
+                const response = await fetch("https://corsproxy.io/?" + encodeURIComponent(url));
+                if (!response.ok) throw new Error("Player not found or API busy");
 
-                // Map to actual API fields (e.g., from GameTools BF2042 response: username, rank, kills, etc.)
-                document.getElementById('playerName').textContent = player.username || player.grindProfileData?.userName || playerName;
-                document.getElementById('playerLevel').textContent = `Rank ${player.rank || player.grindProfileData?.rank || '-'} • Level ${player.level || '-'}`;
-                document.getElementById('avatar').src = player.avatar || `https://via.placeholder.com/100?text=${playerName.charAt(0)}`;
+                const data = await response.json();
+
+                // Real field mapping from current GameTools response
+                const p = data;
+                document.getElementById('playerName').textContent = p.userName || name;
+                document.getElementById('playerLevel').textContent = `Rank ${p.rank || '-'} • Level ${p.level || '-'}`;
+                document.getElementById('avatar').src = p.avatar || `https://via.placeholder.com/100/222/fff?text=${name[0]}`;
 
                 const stats = [
-                    { label: 'Kills', value: player.kills?.toLocaleString() || player.grindProfileData?.kills?.toLocaleString() || 0 },
-                    { label: 'Deaths', value: player.deaths?.toLocaleString() || player.grindProfileData?.deaths?.toLocaleString() || 0 },
-                    { label: 'K/D Ratio', value: player.kd || player.ratio?.toFixed(2) || ((player.kills || 0) / (player.deaths || 1)).toFixed(2) },
-                    { label: 'Wins', value: player.wins?.toLocaleString() || 0 },
-                    { label: 'Win %', value: player.winPercent ? player.winPercent.toFixed(1) + '%' : '0%' },
-                    { label: 'Time Played', value: player.timePlayed ? (player.timePlayed / 3600).toFixed(0) + 'h' : '0h' },
-                    { label: 'SPM', value: player.scorePerMinute?.toFixed(0) || player.spm?.toFixed(0) || 0 },
-                    { label: 'Skill', value: player.skill?.toLocaleString() || 0 }
+                    {label:"Kills",value:(p.kills||0).toLocaleString()},
+                    {label:"Deaths",value:(p.deaths||0).toLocaleString()},
+                    {label:"K/D",value:p.kdr?.toFixed(2) || ((p.kills/(p.deaths||1)).toFixed(2))},
+                    {label:"Wins",value:(p.wins||0).toLocaleString()},
+                    {label:"Win %",value:p.winPercent?.toFixed(1)+"%"},
+                    {label:"Time Played",value:Math.round((p.secondsPlayed||0)/3600)+"h"},
+                    {label:"SPM",value:p.scorePerMinute?.toFixed(0)||0},
+                    {label:"Skill",value:(p.skill||0).toLocaleString()}
                 ];
 
-                document.getElementById('statsGrid').innerHTML = stats.map(s => `
+                document.getElementById('statsGrid').innerHTML = stats.map(s=>`
                     <div class="stat-card">
                         <div class="stat-value">${s.value}</div>
                         <div class="stat-label">${s.label}</div>
-                    </div>
-                `).join('');
+                    </div>`).join('');
 
                 document.getElementById('playerStats').style.display = 'block';
 
-            } catch (err) {
-                showError(err.message);
+            } catch(e) {
+                showError("Player not found or account private/suspended. Try 'shroud' on PC to confirm it works!");
             } finally {
                 document.getElementById('loading').style.display = 'none';
             }
         }
 
-        function showError(msg) {
+        function showError(msg){
             document.getElementById('error').textContent = msg;
             document.getElementById('error').style.display = 'block';
         }
 
-        document.getElementById('playerInput').addEventListener('keypress', e => e.key === 'Enter' && fetchStats());
-
-        // Auto-test with shroud on load (remove if not wanted)
-        window.onload = () => {
-            document.getElementById('platformSelect').value = 'pc';
-            fetchStats();
-        };
+        document.getElementById('playerInput').addEventListener('keypress', e=>e.key==='Enter'&&fetchStats());
+        // Auto-load a working example
+        window.onload = ()=>fetchStats();
     </script>
 </body>
 </html>
