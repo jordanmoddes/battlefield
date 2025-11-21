@@ -1,132 +1,276 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BF6 Live Stats Dashboard - Jordan Moddes</title>
-    <style>
-        body{
-            font-family:Arial,sans-serif;margin:0;padding:20px;min-height:100vh;color:#ffffff;
-            background:#0a0a0a url("https://raw.githubusercontent.com/jordanmoddes/jordanmoddes.github.io/main/assets/Signature_BlackTP.png") center/38% auto no-repeat fixed;
-        }
-        @media (prefers-color-scheme:light){
-            body{background:#ffffff url("https://raw.githubusercontent.com/jordanmoddes/jordanmoddes.github.io/main/assets/Signature_WhiteTP.png") center/38% auto no-repeat fixed;color:#000}
-        }
-        header{text-align:center;margin-bottom:30px}
-        #logo{width:180px;height:auto;margin-bottom:10px}
-        h1{font-size:2.8em;margin:10px 0;text-shadow:0 0 20px rgba(0,0,0,0.7)}
-        .subtitle{font-size:1.3em;color:#00ff9d;margin-top:5px;font-weight:bold}
-        .search-container{margin-bottom:40px;text-align:center}
-        #playerInput,#platformSelect{padding:14px;font-size:18px;border:2px solid #333;border-radius:8px;background:rgba(30,30,30,0.9);color:#fff}
-        #platformSelect{margin-left:12px}
-        button{padding:14px 28px;font-size:18px;background:linear-gradient(135deg,#00ff9d,#00b86e);color:black;font-weight:bold;border:none;border-radius:8px;cursor:pointer;margin-left:12px;transition:all .3s}
-        button:hover{transform:translateY(-3px);box-shadow:0 10px 20px rgba(0,255,157,0.4)}
-        #loading{display:none;color:#00ff9d;font-size:1.2em;margin-top:15px}
-        #error{display:none;color:#ff3366;background:rgba(255,0,0,0.1);padding:15px;border-radius:10px;max-width:600px;margin:20px auto;text-align:center}
-        .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:22px;max-width:1300px;margin:0 auto}
-        .stat-card{background:rgba(20,20,20,0.85);backdrop-filter:blur(10px);border:1px solid #333;border-radius:15px;padding:25px;text-align:center;transition:transform .3s}
-        .stat-card:hover{transform:translateY(-8px)}
-        .stat-value{font-size:2.6em;font-weight:bold;color:#00ff9d;margin:12px 0}
-        .stat-label{color:#888;text-transform:uppercase;font-size:0.9em;letter-spacing:1.5px}
-        .avatar{width:100px;height:100px;border-radius:50%;border:4px solid #00ff9d;box-shadow:0 0 20px rgba(0,255,157,0.6)}
-        .player-info{text-align:center;margin-bottom:30px}
-        .footer{margin-top:80px;text-align:center;color:#666;font-size:0.9em}
-        @media(max-width:768px){#playerInput,#platformSelect,button{width:100%;margin:8px 0}}
-    </style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0b1220">
+
+  <!-- Tab title + JM favicon -->
+  <title>BF6 Dashboard — Jmod Co.</title>
+  <link rel="icon" type="image/png" href="/assets/Signature_WhiteTP.png" />
+
+  <!-- Tailwind -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- html2canvas for Snip -->
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+
+  <style>
+    :root{
+      --bf-accent:#ff6a00;
+      --bg-overlay: rgba(10,18,32,.90);
+      --card-bg: rgba(255,255,255,.11);
+      --card-border: rgba(255,255,255,.18);
+      --text:#f8fafc;
+      --sub:#e5e7eb;
+      --title:#93c5fd;
+      --nav-bg1: rgba(7,11,20,.75);
+      --nav-bg2: rgba(7,11,20,.35);
+      --rank-top:#84cc16;
+      --rank-bottom:#ef4444;
+    }
+    body.light{
+      --bg-overlay: rgba(255,255,255,.60);
+      --card-bg: rgba(0,0,0,.04);
+      --card-border: rgba(15,23,42,.20);
+      --text:#0b1220;
+      --sub:#374151;
+      --title:#1d4ed8;
+      --nav-bg1: rgba(255,255,255,.9);
+      --nav-bg2: rgba(255,255,255,.6);
+    }
+    body{
+      position:relative;
+      min-height:100vh;
+      color:var(--text);
+      background:
+        linear-gradient(180deg, var(--bg-overlay), var(--bg-overlay)),
+        url("https://assetsio.gnwcdn.com/battlefield-6-2.jpg?width=690&quality=85&format=jpg&dpr=3&auto=webp")
+          center/cover no-repeat fixed;
+      font-family: system-ui,-apple-system,Segoe UI,Roboto,Inter,"Helvetica Neue",Arial,"Noto Sans","Apple Color Emoji","Segoe UI Emoji";
+      -webkit-tap-highlight-color: transparent;
+      transition: background-color .2s ease, color .2s ease;
+    }
+
+    /* JM watermark over the BF6 background */
+    .jm-watermark{
+      position:fixed;
+      inset:0;
+      background:
+        url("/assets/Signature_BlackTP.png")
+        center/38% auto no-repeat;
+      opacity:0.5;
+      pointer-events:none;
+      z-index:0;
+    }
+
+    /* Ensure actual content sits above watermark */
+    .page-shell{
+      position:relative;
+      z-index:1;
+    }
+
+    .card{
+      background: var(--card-bg);
+      border:1px solid var(--card-border);
+      border-radius:16px;
+      padding:16px;
+    }
+    .card-tight{
+      padding:12px 14px;
+    }
+    .grid-auto{
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+      gap:10px;
+    }
+    .title{
+      color:var(--title);
+      font-weight:900;
+      font-size:1.05rem;
+      margin-bottom:.5rem;
+      letter-spacing:.03em;
+    }
+    .nav{
+      backdrop-filter: blur(6px);
+      background: linear-gradient(180deg, var(--nav-bg1), var(--nav-bg2));
+      border-bottom:1px solid var(--card-border);
+    }
+    .nav a{ color:var(--sub) }
+    .nav .brand{ font-weight:900; letter-spacing:.06em }
+    .nav .icon-btn{
+      background: var(--card-bg);
+      border:1px solid var(--card-border);
+      padding:.55rem .9rem;
+      border-radius:.7rem;
+      font-weight:700;
+      color:var(--text);
+      font-size:.8rem;
+    }
+    .nav .icon-btn:hover{ background: rgba(255,255,255,.12) }
+
+    .chip{
+      background: var(--card-bg);
+      border:1px solid var(--card-border);
+      padding:.4rem .7rem;
+      border-radius:.7rem;
+      font-size:.8rem;
+    }
+    .btn{
+      background:var(--bf-accent);
+      color:#0b0f1a;
+      font-weight:800;
+      letter-spacing:.02em;
+      padding:.7rem 1.4rem;
+      border-radius:9999px;
+      box-shadow:0 8px 24px rgba(255,106,0,.18);
+      min-width:9rem;
+      transition: transform .06s ease, filter .06s ease;
+      touch-action: manipulation;
+    }
+    .btn:hover{ filter:brightness(1.05); transform:translateY(-1px) }
+    .btn:active{ transform:translateY(0) }
+
+    .radio{
+      appearance:none;
+      width:22px;
+      height:22px;
+      border:2px solid var(--title);
+      border-radius:9999px;
+      display:inline-block;
+      position:relative;
+    }
+    .radio:checked::after{
+      content:"";
+      position:absolute;
+      inset:4px;
+      border-radius:9999px;
+      background:var(--title);
+    }
+
+    .rank-top{ color:var(--rank-top) }
+    .rank-bottom{ color:var(--rank-bottom) }
+
+    .stat-label{
+      font-size:.7rem;
+      text-transform:uppercase;
+      letter-spacing:.08em;
+      color:var(--sub);
+    }
+    .stat-value{
+      font-weight:600;
+      font-size:1rem;
+    }
+    .json-output{
+      font-family: ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;
+      font-size:.78rem;
+      white-space:pre-wrap;
+      word-break:break-word;
+      max-height:420px;
+      overflow:auto;
+    }
+  </style>
 </head>
-<body>
-    <header>
-        <img id="logo" src="https://raw.githubusercontent.com/jordanmoddes/jordanmoddes.github.io/main/assets/logo.png" alt="Jordan Moddes Logo">
-        <h1>BF6 LIVE STATS</h1>
-        <p class="subtitle">Instant • Free • Powered by GameTools API — Jordan Moddes</p>
+
+<body class="pb-12">
+  <!-- Watermark -->
+  <div class="jm-watermark"></div>
+
+  <div class="page-shell">
+    <!-- NAV -->
+    <nav class="nav sticky top-0 z-50">
+      <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+        <a href="https://jordanmoddes.com" target="_blank" rel="noopener" class="brand text-lg">JMOD</a>
+        <div class="flex items-center gap-2">
+          <a class="icon-btn" href="https://gametools.network/stats" target="_blank" rel="noopener">GameTools</a>
+          <button id="shareBtn" class="icon-btn">Share</button>
+          <button id="snipBtn" class="icon-btn">Snip</button>
+          <button id="themeBtn" class="icon-btn">Light</button>
+        </div>
+      </div>
+    </nav>
+
+    <!-- HERO -->
+    <header class="text-center mt-6 mb-6 px-4">
+      <h1 class="text-3xl md:text-4xl font-extrabold tracking-tight" style="color:var(--title)">
+        Battlefield 6 — Stats Dashboard
+      </h1>
+      <p class="text-sm" style="color:var(--sub)">
+        Powered directly by <span class="font-semibold">api.gametools.network</span>.  
+        Pick a platform, enter a tag, hit <b style="color:var(--bf-accent)">LOAD</b>.
+      </p>
     </header>
 
-    <div class="search-container">
-        <input type="text" id="playerInput" placeholder="Enter player name (e.g. shroud)" value="shroud">
-        <select id="platformSelect">
-            <option value="pc">PC</option>
-            <option value="psn">PlayStation</option>
-            <option value="xbl">Xbox</option>
-        </select>
-        <button onclick="fetchStats()">GET STATS</button>
-        <div id="loading">Pulling live stats…</div>
-    </div>
-
-    <div id="error"></div>
-
-    <div id="playerStats" style="display:none">
-        <div class="player-info">
-            <img id="avatar" class="avatar" src="" alt="Avatar">
-            <h2 id="playerName"></h2>
-            <p id="playerLevel"></p>
+    <!-- CONTROLS -->
+    <form id="controls" class="max-w-6xl mx-auto grid grid-cols-1 gap-3 mb-6 px-4">
+      <div class="card grid grid-cols-1 md:grid-cols-[1.1fr_auto_1.2fr_auto] gap-3 items-end">
+        <!-- Platform -->
+        <div>
+          <div class="text-xs mb-1" style="color:var(--sub);">Platform</div>
+          <div class="flex flex-wrap items-center gap-3">
+            <label class="flex items-center gap-2 cursor-pointer chip select-none">
+              <input class="radio" type="radio" name="platform" value="pc" id="pc" />
+              <span class="font-semibold">PC</span>
+            </label>
+            <label class="flex items-center gap-2 cursor-pointer chip select-none">
+              <input class="radio" type="radio" name="platform" value="psn" id="psn" />
+              <span class="font-semibold">PlayStation</span>
+            </label>
+            <label class="flex items-center gap-2 cursor-pointer chip select-none">
+              <input class="radio" type="radio" name="platform" value="xboxone" id="xboxone" />
+              <span class="font-semibold">Xbox</span>
+            </label>
+          </div>
         </div>
-        <div class="stats-grid" id="statsGrid"></div>
-    </div>
 
-    <div class="footer">
-        <p>Built & Maintained by <strong>Jordan Moddes</strong> • Data via <a href="https://api.gametools.network" style="color:#00ff9d">GameTools BF2042 API</a> • 2025</p>
-    </div>
+        <!-- LOAD -->
+        <div class="flex items-end justify-center">
+          <button id="loadBtn" type="submit" class="btn">LOAD</button>
+        </div>
 
-    <script>
-        async function fetchStats() {
-            const name = document.getElementById('playerInput').value.trim();
-            const plat = document.getElementById('platformSelect').value;
-            if (!name) return showError("Enter a player name");
+        <!-- Tag -->
+        <div>
+          <div class="text-xs mb-1" style="color:var(--sub);">Gamer Tag</div>
+          <input id="tag" class="w-full rounded-md px-3 py-3 text-slate-900"
+                 inputmode="text" autocomplete="off" autocapitalize="none"
+                 placeholder="Enter gamer tag" />
+        </div>
 
-            document.getElementById('loading').style.display = 'block';
-            document.getElementById('error').style.display = 'none';
-            document.getElementById('playerStats').style.display = 'none';
+        <!-- Last updated -->
+        <div class="flex items-end justify-start md:justify-end">
+          <div class="chip text-xs" style="color:var(--sub)">
+            Last updated: <span id="updated">—</span>
+          </div>
+        </div>
+      </div>
+    </form>
 
-            try {
-                // Current working GameTools BF2042 endpoint (2025)
-                const url = `https://api.gametools.network/bf2042/stats/?platform=${plat}&name=${encodeURIComponent(name)}`;
-                
-                // Tiny free CORS proxy only if direct fetch is blocked (works 99% of the time)
-                const response = await fetch("https://corsproxy.io/?" + encodeURIComponent(url));
-                if (!response.ok) throw new Error("Player not found or API busy");
+    <!-- DASHBOARD CONTENT -->
+    <main id="content" class="max-w-6xl mx-auto px-4 space-y-4 text-sm"></main>
 
-                const data = await response.json();
+    <!-- RAW JSON -->
+    <section class="max-w-6xl mx-auto mt-4 px-4">
+      <div class="card card-tight">
+        <div class="flex items-center justify-between mb-1">
+          <div class="font-semibold" style="color:var(--title)">Raw GameTools JSON</div>
+          <div id="status" class="text-xs" style="color:var(--sub)">Idle</div>
+        </div>
+        <pre id="json" class="json-output" style="color:var(--sub)">No data loaded yet.</pre>
+      </div>
+    </section>
 
-                // Real field mapping from current GameTools response
-                const p = data;
-                document.getElementById('playerName').textContent = p.userName || name;
-                document.getElementById('playerLevel').textContent = `Rank ${p.rank || '-'} • Level ${p.level || '-'}`;
-                document.getElementById('avatar').src = p.avatar || `https://via.placeholder.com/100/222/fff?text=${name[0]}`;
+    <footer class="text-center text-xs mt-8 px-4" style="color:var(--sub)">
+      Powered directly by GameTools BF6 API • JM overlay &amp; layout by Jmod Co.
+    </footer>
+  </div>
 
-                const stats = [
-                    {label:"Kills",value:(p.kills||0).toLocaleString()},
-                    {label:"Deaths",value:(p.deaths||0).toLocaleString()},
-                    {label:"K/D",value:p.kdr?.toFixed(2) || ((p.kills/(p.deaths||1)).toFixed(2))},
-                    {label:"Wins",value:(p.wins||0).toLocaleString()},
-                    {label:"Win %",value:p.winPercent?.toFixed(1)+"%"},
-                    {label:"Time Played",value:Math.round((p.secondsPlayed||0)/3600)+"h"},
-                    {label:"SPM",value:p.scorePerMinute?.toFixed(0)||0},
-                    {label:"Skill",value:(p.skill||0).toLocaleString()}
-                ];
-
-                document.getElementById('statsGrid').innerHTML = stats.map(s=>`
-                    <div class="stat-card">
-                        <div class="stat-value">${s.value}</div>
-                        <div class="stat-label">${s.label}</div>
-                    </div>`).join('');
-
-                document.getElementById('playerStats').style.display = 'block';
-
-            } catch(e) {
-                showError("Player not found or account private/suspended. Try 'shroud' on PC to confirm it works!");
-            } finally {
-                document.getElementById('loading').style.display = 'none';
-            }
-        }
-
-        function showError(msg){
-            document.getElementById('error').textContent = msg;
-            document.getElementById('error').style.display = 'block';
-        }
-
-        document.getElementById('playerInput').addEventListener('keypress', e=>e.key==='Enter'&&fetchStats());
-        // Auto-load a working example
-        window.onload = ()=>fetchStats();
-    </script>
-</body>
-</html>
+  <script>
+    // ---------- Helpers ----------
+    function buildApiUrl(platform, name){
+      const params = new URLSearchParams({
+        name,
+        platform,
+        lang:"en-us"
+      });
+      return "https://api.gametools.network/bf6/stats/?" + params.toString();
+    }
+    function fmtNu
