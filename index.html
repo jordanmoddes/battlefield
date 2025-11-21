@@ -4,10 +4,18 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#0b1220">
+
   <title>Battlefield 6 Dashboard</title>
+
+  <!-- JM white TP favicon -->
+  <link rel="icon" type="image/png" href="/jmodco/assets/Signature_WhiteTP.png" />
+
+  <!-- Tailwind -->
   <script src="https://cdn.tailwindcss.com"></script>
+
   <!-- html2canvas for Snip -->
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+
   <style>
     :root{
       --bf-accent:#ff6a00;
@@ -68,7 +76,9 @@
     .rank-bottom{ color:var(--rank-bottom) }
   </style>
 </head>
+
 <body class="pb-12">
+
   <!-- Top Navigation -->
   <nav class="nav sticky top-0 z-50">
     <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
@@ -83,9 +93,7 @@
   </nav>
 
   <header class="text-center mt-6 mb-6 px-4">
-    <h1 class="text-3xl md:text-4xl font-extrabold tracking-tight" style="color:var(--title)">
-      Battlefield 6 Stats Dashboard
-    </h1>
+    <h1 class="text-3xl md:text-4xl font-extrabold tracking-tight" style="color:var(--title)">Battlefield 6 Stats Dashboard</h1>
     <p class="text-sm" style="color:var(--sub)">
       Pick a platform, enter a gamer tag, then hit <b style="color:var(--bf-accent)">LOAD</b>. Auto-refresh every 60s.
     </p>
@@ -94,12 +102,13 @@
   <!-- Controls -->
   <form id="controls" class="max-w-6xl mx-auto grid grid-cols-1 gap-3 mb-6 px-4">
     <div class="card grid grid-cols-1 md:grid-cols-[1fr_auto_1fr_auto] gap-3">
+
       <!-- Platform radios -->
       <div>
         <div class="text-xs" style="color:var(--sub);">Platform</div>
         <div class="flex flex-wrap items-center gap-4 mt-1">
           <label class="flex items-center gap-2 cursor-pointer chip select-none">
-            <input class="radio" type="radio" name="platform" value="EA"    id="ea"    />
+            <input class="radio" type="radio" name="platform" value="EA" id="ea" />
             <span class="font-semibold">EA</span>
           </label>
           <label class="flex items-center gap-2 cursor-pointer chip select-none">
@@ -107,11 +116,11 @@
             <span class="font-semibold">Steam</span>
           </label>
           <label class="flex items-center gap-2 cursor-pointer chip select-none">
-            <input class="radio" type="radio" name="platform" value="Xbox"  id="xbox"  />
+            <input class="radio" type="radio" name="platform" value="Xbox" id="xbox" />
             <span class="font-semibold">Xbox</span>
           </label>
           <label class="flex items-center gap-2 cursor-pointer chip select-none">
-            <input class="radio" type="radio" name="platform" value="PS5"   id="ps5"   />
+            <input class="radio" type="radio" name="platform" value="PS5" id="ps5" />
             <span class="font-semibold">PS5</span>
           </label>
         </div>
@@ -125,13 +134,14 @@
       <!-- Gamer tag -->
       <div>
         <div class="text-xs" style="color:var(--sub);">Gamer Tag</div>
-        <input id="tag" class="w-full rounded-md px-3 py-3 text-slate-900" inputmode="text" autocomplete="off" autocapitalize="none" placeholder="Enter gamer tag" />
+        <input id="tag" class="w-full rounded-md px-3 py-3 text-slate-900" placeholder="Enter gamer tag" />
       </div>
 
       <!-- Last updated -->
       <div class="flex items-end justify-start md:justify-end">
         <div class="chip text-xs" style="color:var(--sub)">Last updated: <span id="updated">—</span></div>
       </div>
+
     </div>
   </form>
 
@@ -142,15 +152,17 @@
   </footer>
 
   <script>
-    // ===== set this to your Worker URL (must be HTTPS) =====
+    // ===== set this to your Worker URL =====
     const API_BASE = "https://jmodbattlefield.jmodwork.workers.dev";
-    // =======================================================
     const REFRESH_MS = 60000;
 
-    // Theme (default dark)
+    // Theme toggle
     const themeBtn = document.getElementById("themeBtn");
     const savedTheme = localStorage.getItem("bf-theme");
-    if(savedTheme === "light"){ document.body.classList.add("light"); themeBtn.textContent = "Dark"; }
+    if (savedTheme === "light") {
+      document.body.classList.add("light");
+      themeBtn.textContent = "Dark";
+    }
     themeBtn.addEventListener("click", () => {
       document.body.classList.toggle("light");
       const light = document.body.classList.contains("light");
@@ -160,94 +172,129 @@
 
     // Share
     document.getElementById("shareBtn").addEventListener("click", async () => {
-      try{ await navigator.clipboard.writeText(location.href);
-        const b = document.getElementById("shareBtn"); b.textContent="Copied!"; setTimeout(()=>b.textContent="Share",1200);
-      }catch{ alert("Could not copy. Please copy from the address bar."); }
+      try {
+        await navigator.clipboard.writeText(location.href);
+        const b = document.getElementById("shareBtn");
+        b.textContent = "Copied!";
+        setTimeout(() => (b.textContent = "Share"), 1200);
+      } catch {
+        alert("Copy failed. Use the address bar.");
+      }
     });
 
-    // Snip (clipboard on supported; download fallback for iOS)
+    // Snip
     document.getElementById("snipBtn").addEventListener("click", async () => {
       try {
-        const canvas = await html2canvas(document.body, { useCORS:true, logging:false, windowWidth:document.documentElement.scrollWidth, windowHeight:document.documentElement.scrollHeight });
+        const canvas = await html2canvas(document.body, {
+          useCORS: true,
+          logging: false,
+          windowWidth: document.documentElement.scrollWidth,
+          windowHeight: document.documentElement.scrollHeight,
+        });
         canvas.toBlob(async (blob) => {
-          try{
-            await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
-            const b=document.getElementById("snipBtn"); b.textContent="Snipped!"; setTimeout(()=>b.textContent="Snip",1200);
-          }catch{
-            const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="battlefield-dashboard.png"; a.click(); URL.revokeObjectURL(a.href);
+          try {
+            await navigator.clipboard.write([
+              new ClipboardItem({ "image/png": blob }),
+            ]);
+            const b = document.getElementById("snipBtn");
+            b.textContent = "Snipped!";
+            setTimeout(() => (b.textContent = "Snip"), 1200);
+          } catch {
+            const a = document.createElement("a");
+            a.href = URL.createObjectURL(blob);
+            a.download = "battlefield-dashboard.png";
+            a.click();
+            URL.revokeObjectURL(a.href);
           }
         });
-      } catch(e){ alert("Screenshot failed. Try again."); console.error(e); }
+      } catch (e) {
+        alert("Screenshot failed.");
+        console.error(e);
+      }
     });
 
-    // ----- Dashboard logic (fetch only on LOAD + 60s poll) -----
+    // Dashboard Logic
     const params = new URLSearchParams(location.search);
     const defaultTag = params.get("tag") || "notJMODsuspended";
     const defaultPlatform = params.get("platform") || "PS5";
 
-    const tagEl = document.getElementById("tag"); tagEl.value = defaultTag;
+    const tagEl = document.getElementById("tag");
+    tagEl.value = defaultTag;
 
-    const platformMap = { EA:"ea", Steam:"steam", Xbox:"xbox", PS5:"ps5" }; // future provider mapping
-    // check the proper radio
-    const idMap = { EA:"ea", Steam:"steam", Xbox:"xbox", PS5:"ps5" };
-    (document.getElementById(idMap[defaultPlatform]) || document.getElementById("ps5")).checked = true;
+    (document.getElementById(defaultPlatform.toLowerCase()) || document.getElementById("ps5")).checked = true;
 
     const formEl = document.getElementById("controls");
     const updatedEl = document.getElementById("updated");
     const contentEl = document.getElementById("content");
 
     let poll = null;
-    function getPlatform(){ const r=document.querySelector("input[name='platform']:checked"); return r ? r.value : "PS5"; }
-    function startPolling(p,t){ stopPolling(); poll=setInterval(()=>load(p,t), REFRESH_MS); }
-    function stopPolling(){ if(poll){ clearInterval(poll); poll=null; } }
+    function getPlatform() {
+      const r = document.querySelector("input[name='platform']:checked");
+      return r ? r.value : "PS5";
+    }
+    function startPolling(p, t) {
+      stopPolling();
+      poll = setInterval(() => load(p, t), REFRESH_MS);
+    }
+    function stopPolling() {
+      if (poll) {
+        clearInterval(poll);
+        poll = null;
+      }
+    }
 
     formEl.addEventListener("submit", (e) => {
       e.preventDefault();
       const platform = getPlatform();
       const tag = tagEl.value.trim() || "notJMODsuspended";
-      history.replaceState(null, "", `?${new URLSearchParams({ platform, tag }).toString()}`);
+      history.replaceState(null, "", `?${new URLSearchParams({ platform, tag })}`);
       load(platform, tag);
       startPolling(platform, tag);
     });
 
-    function rankSpan(txt){
-      if(!txt) return "";
-      const cls = txt.toLowerCase().startsWith("top") ? "rank-top" :
-                  txt.toLowerCase().startsWith("bottom") ? "rank-bottom" : "";
+    function rankSpan(txt) {
+      if (!txt) return "";
+      const cls =
+        txt.toLowerCase().startsWith("top")
+          ? "rank-top"
+          : txt.toLowerCase().startsWith("bottom")
+          ? "rank-bottom"
+          : "";
       return cls ? `<span class="${cls}">(${txt})</span>` : `(${txt})`;
     }
 
-    async function load(platform, tag){
-      try{
-        const res = await fetch(`${API_BASE}/api/summary?platform=${encodeURIComponent(platform)}&tag=${encodeURIComponent(tag)}`, { cache:"no-store" });
-        if(!res.ok){
-          const msg = await res.text().catch(()=> "");
+    async function load(platform, tag) {
+      try {
+        const res = await fetch(
+          `${API_BASE}/api/summary?platform=${encodeURIComponent(platform)}&tag=${encodeURIComponent(tag)}`,
+          { cache: "no-store" }
+        );
+        if (!res.ok) {
+          const msg = await res.text().catch(() => "");
           throw new Error(msg || `API ${res.status}`);
         }
         const data = await res.json();
         render(data);
         updatedEl.textContent = new Date().toLocaleTimeString();
-      }catch(err){
+      } catch (err) {
         renderError(err.message || String(err));
         updatedEl.textContent = "—";
         console.error(err);
       }
     }
 
-    function renderError(msg){
+    function renderError(msg) {
       contentEl.innerHTML = `
         <div class="card" style="background:#7f1d1d;border-color:#fecaca">
           <div class="font-bold mb-1">Couldn’t load data</div>
           <div class="text-xs">${msg}</div>
-          <div class="text-xs mt-2">Check API_BASE, Worker deployment, and CORS headers.</div>
         </div>`;
     }
 
-    function render(data){
+    function render(data) {
       const o = data.overview || {};
       contentEl.innerHTML = "";
 
-      // Overview
       contentEl.innerHTML += `
         <section class="card">
           <div class="title">Overview</div>
@@ -267,75 +314,86 @@
           </div>
         </section>`;
 
-      // Classes
       contentEl.innerHTML += `
         <section class="card">
           <div class="title">Classes</div>
           <div class="grid-auto">
-            ${(data.classes||[]).map(x=>`
-              <div>
-                <b>${x.name}</b><br/>
-                ⭐ ${x.stars} &nbsp; Kills: ${x.kills}<br/>
-                K/D: ${x.kd} &nbsp; KPM: ${x.kpm}<br/>
-                Revives: ${x.revives} &nbsp; Time: ${x.hours} hrs
-              </div>`).join("")}
+            ${(data.classes || [])
+              .map(
+                (x) => `
+                <div>
+                  <b>${x.name}</b><br/>
+                  ⭐ ${x.stars} &nbsp; Kills: ${x.kills}<br/>
+                  K/D: ${x.kd} &nbsp; KPM: ${x.kpm}<br/>
+                  Revives: ${x.revives} &nbsp; Time: ${x.hours} hrs
+                </div>`
+              )
+              .join("")}
           </div>
         </section>`;
 
-      // Modes
       contentEl.innerHTML += `
         <section class="card">
           <div class="title">Modes</div>
           <div class="grid-auto">
-            ${(data.modes||[]).map(m=>`
-              <div>
-                <b>${m.name}</b><br/>
-                Kills: ${m.kills} &nbsp; KPM: ${m.kpm}<br/>
-                W/L: ${m.wl}% &nbsp; Wins: ${m.wins} • Losses: ${m.losses}<br/>
-                Time: ${m.time} hrs
-              </div>`).join("")}
+            ${(data.modes || [])
+              .map(
+                (m) => `
+                <div>
+                  <b>${m.name}</b><br/>
+                  Kills: ${m.kills} &nbsp; KPM: ${m.kpm}<br/>
+                  W/L: ${m.wl}% &nbsp; Wins: ${m.wins} • Losses: ${m.losses}<br/>
+                  Time: ${m.time} hrs
+                </div>`
+              )
+              .join("")}
           </div>
         </section>`;
 
-      // Weapons
       contentEl.innerHTML += `
         <section class="card">
           <div class="title">Top Weapons</div>
           <div class="grid-auto">
-            ${(data.weapons||[]).map(w=>`
-              <div>
-                <b>${w.name}</b><br/>
-                Kills: ${w.kills}<br/>
-                Accuracy: ${w.acc}<br/>
-                KPM: ${w.kpm}
-              </div>`).join("")}
+            ${(data.weapons || [])
+              .map(
+                (w) => `
+                <div>
+                  <b>${w.name}</b><br/>
+                  Kills: ${w.kills}<br/>
+                  Accuracy: ${w.acc}<br/>
+                  KPM: ${w.kpm}
+                </div>`
+              )
+              .join("")}
           </div>
         </section>`;
 
-      // Gadgets
       contentEl.innerHTML += `
         <section class="card">
           <div class="title">Top Gadgets</div>
           <div class="grid-auto">
-            ${(data.gadgets||[]).map(g=>`
-              <div>
-                <b>${g.name}</b><br/>
-                Kills: ${g.kills}<br/>
-                KPM: ${g.kpm}<br/>
-                Time: ${g.hours} hrs
-              </div>`).join("")}
+            ${(data.gadgets || [])
+              .map(
+                (g) => `
+                <div>
+                  <b>${g.name}</b><br/>
+                  Kills: ${g.kills}<br/>
+                  KPM: ${g.kpm}<br/>
+                  Time: ${g.hours} hrs
+                </div>`
+              )
+              .join("")}
           </div>
         </section>`;
 
-      // Footer
       contentEl.innerHTML += `
         <section class="card text-center" style="color:var(--sub)">
-          Player: <b>${data.player?.name ?? tagEl.value}</b> (${data.player?.platform ?? getPlatform()}) • Hours: ${data.player?.hours ?? "—"}
+          Player: <b>${data.player?.name ?? tagEl.value}</b> (${data.player?.platform ?? getPlatform()}) • Hours: ${
+        data.player?.hours ?? "—"
+      }
         </section>`;
     }
-
-    // (Optional) preload defaults:
-    // load(getPlatform(), tagEl.value); startPolling(getPlatform(), tagEl.value);
   </script>
+
 </body>
 </html>
