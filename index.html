@@ -1,161 +1,194 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="theme-color" content="#000000">
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Battlefield Stats Dashboard</title>
 
-  <title>Battlefield 6 Dashboard</title>
+<link rel="icon" type="image/png" href="/jmodco/assets/Signature_WhiteTP.png" />
 
-  <!-- favicon -->
-  <link rel="icon" type="image/png" href="/jmodco/assets/Signature_WhiteTP.png" />
+<script src="https://cdn.tailwindcss.com"></script>
 
-  <!-- tailwind -->
-  <script src="https://cdn.tailwindcss.com"></script>
-
-  <!-- snip -->
-  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
-
-  <style>
-    body{
-      background:
-        linear-gradient(0deg, rgba(0,0,0,0.65), rgba(0,0,0,0.65)),
-        url("https://i.imgur.com/0pNTRSm.jpeg") center/cover no-repeat fixed;
-      color:white;
-      font-family: Inter, system-ui, sans-serif;
-      min-height:100vh;
-    }
-
-    .card{
-      background:rgba(255,255,255,0.08);
-      border:1px solid rgba(255,255,255,0.18);
-      border-radius:16px;
-      padding:16px;
-    }
-
-    .title{
-      font-size:1.3rem;
-      font-weight:700;
-      color:#ff6a00;
-      margin-bottom:.5rem;
-      text-align:center;
-    }
-  </style>
+<style>
+body {
+  min-height: 100vh;
+  background:
+    linear-gradient(180deg, rgba(0,0,0,.55), rgba(0,0,0,.55)),
+    url("https://assetsio.gnwcdn.com/battlefield-6-2.jpg?width=690&quality=85&format=jpg&dpr=3&auto=webp") center/cover no-repeat fixed;
+  font-family: system-ui, sans-serif;
+  color: white;
+}
+.card {
+  background: rgba(0,0,0,.45);
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 12px;
+  padding: 16px;
+}
+.error {
+  background: #7f1d1d;
+  border: 1px solid #fecaca;
+  padding: 12px;
+  border-radius: 10px;
+  margin-top: 10px;
+}
+</style>
 </head>
 
-<body class="pb-10">
+<body class="pb-20">
 
-  <nav class="w-full py-3 px-5 flex justify-between items-center bg-black/40 backdrop-blur-md">
-    <div class="font-extrabold tracking-wider text-lg">JMOD</div>
-    <div class="flex gap-2">
-      <button id="shareBtn" class="px-3 py-1 bg-white/20 rounded">Share</button>
-      <button id="snipBtn" class="px-3 py-1 bg-white/20 rounded">Snip</button>
-    </div>
-  </nav>
+<!-- HEADER -->
+<div class="text-center pt-6 pb-2 text-3xl font-extrabold">
+  Battlefield Stats Dashboard
+</div>
+<div class="text-center text-sm opacity-70 mb-6">Free API via GameTools.network</div>
 
-  <header class="text-center mt-6 mb-4">
-    <h1 class="text-3xl font-extrabold">Battlefield 6 Stats Dashboard</h1>
-    <p class="opacity-80 text-sm">Free API via GameTools.network</p>
-  </header>
+<!-- CONTROLS -->
+<div class="max-w-3xl mx-auto card mb-4">
 
-  <!-- search controls -->
-  <div class="max-w-4xl mx-auto card mb-6">
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-3 items-end">
-      
-      <div>
-        <label class="text-sm opacity-80">Platform</label>
-        <select id="platform" class="w-full text-black px-2 py-2 rounded">
-          <option value="pc">PC</option>
-          <option value="psn">PSN</option>
-          <option value="xbl">Xbox</option>
-        </select>
-      </div>
+  <!-- GAME SELECT -->
+  <label class="text-sm opacity-80">Game</label>
+  <select id="game" class="w-full mt-1 mb-3 px-3 py-2 rounded-md text-black">
+    <option value="bf6">Battlefield 6</option>
+    <option value="bf2042">Battlefield 2042</option>
+    <option value="bfv">Battlefield V</option>
+    <option value="bf1">Battlefield 1</option>
+    <option value="bf4">Battlefield 4</option>
+  </select>
 
-      <div class="md:col-span-2">
-        <label class="text-sm opacity-80">EA / Origin ID</label>
-        <input id="playerId" class="w-full text-black px-3 py-2 rounded" placeholder="Enter player ID" />
-      </div>
+  <!-- PLATFORM SELECT (changes based on game) -->
+  <label class="text-sm opacity-80">Platform</label>
+  <div id="platforms" class="flex gap-3 mt-1 mb-4 text-sm"></div>
 
-      <button id="loadBtn" class="bg-orange-500 hover:bg-orange-600 text-black font-bold py-2 rounded">
-        LOAD
-      </button>
-    </div>
-    <div class="text-xs mt-2 opacity-70">Last updated: <span id="lastUpdate">—</span></div>
+  <!-- PLAYER ID -->
+  <label class="text-sm opacity-80">EA / Origin ID</label>
+  <input id="pid" class="w-full mt-1 px-3 py-2 rounded-md text-black"
+         placeholder="Enter EA ID (e.g. notJMODsuspended)" />
+
+  <!-- LOAD BUTTON -->
+  <button id="loadBtn"
+    class="mt-4 w-full py-3 bg-orange-500 hover:bg-orange-600 font-bold rounded-lg">
+    LOAD
+  </button>
+
+  <!-- Last updated -->
+  <div class="mt-3 text-right text-xs opacity-70">
+    Last updated: <span id="updated">—</span>
   </div>
+</div>
 
-  <main id="content" class="max-w-5xl mx-auto space-y-4"></main>
+<!-- ERROR -->
+<div id="error" class="max-w-3xl mx-auto"></div>
 
-  <footer class="text-center text-xs mt-10 opacity-70">
-    Powered by GameTools.network (Free API)
-  </footer>
+<!-- RESULTS -->
+<div id="results" class="max-w-3xl mx-auto space-y-4 text-sm"></div>
 
 <script>
-async function loadBF6() {
-  const platform = document.getElementById("platform").value;
-  const id = document.getElementById("playerId").value.trim();
-  const out = document.getElementById("content");
-  const last = document.getElementById("lastUpdate");
+/* -----------------------------------------
+   PLATFORM MAPS BY GAME
+------------------------------------------ */
+const GAME_PLATFORMS = {
+  bf6: ["ea", "steam"],            // BF6 = EA or Steam
+  bf2042: ["pc", "psn", "xbl"],    // 2042 API needs personaId, but GameTools "pc/psn/xbl"
+  bfv: ["pc", "psn", "xbl"],
+  bf1: ["pc", "psn", "xbl"],
+  bf4: ["pc", "psn", "xbl"]
+};
 
-  if (!id) {
-    out.innerHTML = `<div class="card">Enter a player ID.</div>`;
+/* -----------------------------------------
+   RENDER PLATFORM BUTTONS
+------------------------------------------ */
+function renderPlatforms() {
+  const game = document.getElementById("game").value;
+  const platforms = GAME_PLATFORMS[game];
+  const container = document.getElementById("platforms");
+
+  container.innerHTML = "";
+
+  platforms.forEach(p => {
+    const label = p.toUpperCase();
+    container.innerHTML += `
+      <label class="flex items-center gap-2 cursor-pointer">
+        <input type="radio" name="platform" value="${p}" />
+        ${label}
+      </label>
+    `;
+  });
+
+  container.querySelector("input").checked = true;
+}
+
+renderPlatforms();
+
+document.getElementById("game").addEventListener("change", renderPlatforms);
+
+/* -----------------------------------------
+   LOAD DATA
+------------------------------------------ */
+document.getElementById("loadBtn").addEventListener("click", async () => {
+  const game = document.getElementById("game").value;
+  const platform = document.querySelector("input[name='platform']:checked").value;
+  const pid = document.getElementById("pid").value.trim();
+
+  if (!pid) {
+    showError("Please enter a Player ID.");
     return;
   }
 
-  const url = `https://api.gametools.network/bf6/stats/player/${platform}/${id}?format=json`;
+  clearError();
+  document.getElementById("results").innerHTML = "Loading...";
+
+  const url = `https://api.gametools.network/${game}/stats/player/${platform}/${pid}?format=json`;
 
   try {
-    out.innerHTML = `<div class="card">Loading...</div>`;
+    const res = await fetch(url);
+    const data = await res.json();
 
-    const r = await fetch(url);
-    if (!r.ok) throw new Error(r.status);
+    if (res.status !== 200) {
+      showError(`Error ${res.status}: ${data.error || "Unable to load stats."}`);
+      document.getElementById("results").innerHTML = "";
+      return;
+    }
 
-    const data = await r.json();
+    document.getElementById("updated").textContent = new Date().toLocaleTimeString();
 
-    const p = data.player || {};
+    renderStats(data);
 
-    out.innerHTML = `
-      <section class="card">
-        <div class="title">Overview</div>
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
-          <div><b>Kills:</b> ${p.kills ?? "—"}</div>
-          <div><b>Deaths:</b> ${p.deaths ?? "—"}</div>
-          <div><b>K/D:</b> ${p.kd ?? "—"}</div>
-          <div><b>Wins:</b> ${p.wins ?? "—"}</div>
-          <div><b>Time Played:</b> ${p.timePlayed ?? "—"} hrs</div>
-          <div><b>Accuracy:</b> ${p.accuracy ?? "—"}%</div>
-          <div><b>Headshot %:</b> ${p.headshotPercentage ?? "—"}%</div>
-          <div><b>Shots Fired:</b> ${p.shotsFired ?? "—"}</div>
-        </div>
-      </section>
-    `;
-
-    last.textContent = new Date().toLocaleTimeString();
-
-  } catch (err) {
-    out.innerHTML = `
-      <div class="card bg-red-900 border-red-400">
-        <b>Error loading data.</b><br>
-        ${err.message}
-      </div>`;
+  } catch (e) {
+    showError("Failed to fetch data.");
   }
+});
+
+/* -----------------------------------------
+   DISPLAY ERROR
+------------------------------------------ */
+function showError(msg) {
+  document.getElementById("error").innerHTML =
+    `<div class="error">${msg}</div>`;
 }
 
-document.getElementById("loadBtn").addEventListener("click", loadBF6);
+function clearError() {
+  document.getElementById("error").innerHTML = "";
+}
 
-document.getElementById("shareBtn").addEventListener("click", () => {
-  navigator.clipboard.writeText(location.href);
-  alert("Link copied!");
-});
+/* -----------------------------------------
+   RENDER RESULTS
+------------------------------------------ */
+function renderStats(data) {
+  const r = document.getElementById("results");
+  const p = data.player;
 
-document.getElementById("snipBtn").addEventListener("click", async () => {
-  const canvas = await html2canvas(document.body);
-  canvas.toBlob(blob => {
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = "bf6_stats.png";
-    a.click();
-  });
-});
+  r.innerHTML = `
+    <div class="card">
+      <div class="text-xl font-bold mb-2">Overview</div>
+      <div>Kills: ${p.kills ?? "—"}</div>
+      <div>Deaths: ${p.deaths ?? "—"}</div>
+      <div>K/D: ${p.kd ?? "—"}</div>
+      <div>Wins: ${p.wins ?? "—"}</div>
+      <div>Time Played: ${p.timePlayed ?? "—"} hrs</div>
+      <div>Headshots: ${p.headshotPercentage ?? "—"}%</div>
+    </div>
+  `;
+}
 </script>
 
 </body>
