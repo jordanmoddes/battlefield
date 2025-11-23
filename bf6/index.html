@@ -181,7 +181,7 @@
           <a class="icon-btn" href="https://gametools.network/stats" target="_blank" rel="noopener">GameTools</a>
           <button id="shareBtn" class="icon-btn">Share</button>
           <button id="snipBtn" class="icon-btn">Snip</button>
-          <button id="themeBtn" class="icon-btn">Light Mode</button>
+          <button id="themeBtn" class="icon-btn">Light</button>
         </div>
       </div>
     </nav>
@@ -226,7 +226,7 @@
 
         <!-- Tag -->
         <div>
-          <div class="text-xs mb-1" style="color:var(--sub);">Gamer Tag</div>
+          <div class="text-xs mb-1" style="color:var(--sub);">OG Gamer Tag</div>
           <input id="tag" class="w-full rounded-md px-3 py-3 text-slate-900"
                  inputmode="text" autocomplete="off" autocapitalize="none"
                  placeholder="Enter gamer tag" />
@@ -324,18 +324,25 @@
       return r ? r.value : "psn";
     }
 
-    // ---------- Theme ----------
-    const savedTheme = localStorage.getItem("bf6-theme");
-    if (savedTheme === "light") {
-      document.body.classList.add("light");
-      themeBtn.textContent = "Dark";
-    }
-    themeBtn.addEventListener("click", () => {
-      document.body.classList.toggle("light");
-      const light = document.body.classList.contains("light");
-      themeBtn.textContent = light ? "Dark" : "Light";
-      localStorage.setItem("bf6-theme", light ? "light" : "dark");
-    });
+    // ---------- Theme (default = DARK) ----------
+const savedTheme = localStorage.getItem("bf6-theme");
+
+// Always start in DARK unless user explicitly chose light
+if (savedTheme === "light") {
+  document.body.classList.add("light");
+  themeBtn.textContent = "Dark";
+} else {
+  document.body.classList.remove("light"); // hard reset to dark
+  themeBtn.textContent = "Light";
+  localStorage.setItem("bf6-theme", "dark");
+}
+
+themeBtn.addEventListener("click", () => {
+  document.body.classList.toggle("light");
+  const light = document.body.classList.contains("light");
+  themeBtn.textContent = light ? "Dark" : "Light";
+  localStorage.setItem("bf6-theme", light ? "light" : "dark");
+});
 
     // ---------- Share ----------
     shareBtn.addEventListener("click", async () => {
@@ -350,81 +357,92 @@
     });
 
     // ---------- Snip (GRID: mobile 3×2, desktop 2×2) ----------
-    snipBtn.addEventListener("click", async () => {
+snipBtn.addEventListener("click", async () => {
+  // Temporarily force DARK for the screenshot
+  const wasLight = document.body.classList.contains("light");
+  if (wasLight) {
+    document.body.classList.remove("light");
+  }
+
+  try {
+    const target = document.body; // include BF image + watermark
+
+    const isMobile = window.matchMedia("(max-width: 768px)").matches;
+
+    // Mobile = 6 slices (vertical) → 3 columns × 2 rows
+    // Desktop = 4 slices (vertical) → 2 columns × 2 rows
+    const slices = isMobile ? 6 : 4;
+    const cols   = isMobile ? 3 : 2;
+    const rows   = 2;
+
+    const originalCanvas = await html2canvas(target, {
+      useCORS: true,
+      logging: false,
+      scrollX: 0,
+      scrollY: -window.scrollY,
+      windowWidth: document.documentElement.scrollWidth,
+      windowHeight: document.documentElement.scrollHeight,
+      backgroundColor: null
+    });
+
+    const sliceHeight = originalCanvas.height / slices;
+    const sliceWidth  = originalCanvas.width;
+
+    const gridCanvas = document.createElement("canvas");
+    gridCanvas.width  = cols * sliceWidth;
+    gridCanvas.height = rows * sliceHeight;
+
+    const ctx = gridCanvas.getContext("2d");
+
+    for (let i = 0; i < slices; i++) {
+      const sx = 0;
+      const sy = i * sliceHeight;
+
+      const col = i % cols;
+      const row = Math.floor(i / cols);
+
+      const dx = col * sliceWidth;
+      const dy = row * sliceHeight;
+
+      ctx.drawImage(
+        originalCanvas,
+        sx, sy, sliceWidth, sliceHeight,
+        dx, dy, sliceWidth, sliceHeight
+      );
+    }
+
+    const fileName = isMobile
+      ? "bf6-dashboard-mobile-3x2.png"
+      : "bf6-dashboard-desktop-2x2.png";
+
+    gridCanvas.toBlob(async (blob) => {
+      if (!blob) throw new Error("Could not create image blob.");
+
       try {
-        const target = document.body; // include BF image + watermark
-
-        const isMobile = window.matchMedia("(max-width: 768px)").matches;
-
-        // Mobile = 6 slices (vertical) → 3 columns × 2 rows
-        // Desktop = 4 slices (vertical) → 2 columns × 2 rows
-        const slices = isMobile ? 6 : 4;
-        const cols   = isMobile ? 3 : 2;
-        const rows   = 2;
-
-        const originalCanvas = await html2canvas(target, {
-          useCORS: true,
-          logging: false,
-          scrollX: 0,
-          scrollY: -window.scrollY,
-          windowWidth: document.documentElement.scrollWidth,
-          windowHeight: document.documentElement.scrollHeight,
-          backgroundColor: null
-        });
-
-        const sliceHeight = originalCanvas.height / slices;
-        const sliceWidth  = originalCanvas.width;
-
-        const gridCanvas = document.createElement("canvas");
-        gridCanvas.width  = cols * sliceWidth;
-        gridCanvas.height = rows * sliceHeight;
-
-        const ctx = gridCanvas.getContext("2d");
-
-        for (let i = 0; i < slices; i++) {
-          const sx = 0;
-          const sy = i * sliceHeight;
-
-          const col = i % cols;
-          const row = Math.floor(i / cols);
-
-          const dx = col * sliceWidth;
-          const dy = row * sliceHeight;
-
-          ctx.drawImage(
-            originalCanvas,
-            sx, sy, sliceWidth, sliceHeight,
-            dx, dy, sliceWidth, sliceHeight
-          );
-        }
-
-        const fileName = isMobile
-          ? "bf6-dashboard-mobile-3x2.png"
-          : "bf6-dashboard-desktop-2x2.png";
-
-        gridCanvas.toBlob(async (blob) => {
-          if (!blob) throw new Error("Could not create image blob.");
-
-          try {
-            await navigator.clipboard.write([
-              new ClipboardItem({ "image/png": blob })
-            ]);
-            const old = snipBtn.textContent;
-            snipBtn.textContent = "Snipped!";
-            setTimeout(() => snipBtn.textContent = old, 1200);
-          } catch {
-            const a = document.createElement("a");
-            a.href = URL.createObjectURL(blob);
-            a.download = fileName;
-            a.click();
-            URL.revokeObjectURL(a.href);
-          }
-        });
-      } catch (e) {
-        console.error(e);
-        alert("Screenshot failed. Try again.");
+        await navigator.clipboard.write([
+          new ClipboardItem({ "image/png": blob })
+        ]);
+        const old = snipBtn.textContent;
+        snipBtn.textContent = "Snipped!";
+        setTimeout(() => snipBtn.textContent = old, 1200);
+      } catch {
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = fileName;
+        a.click();
+        URL.revokeObjectURL(a.href);
       }
     });
+  } catch (e) {
+    console.error(e);
+    alert("Screenshot failed. Try again.");
+  } finally {
+    // Put the user back into whatever theme they had
+    if (wasLight) {
+      document.body.classList.add("light");
+    }
+  }
+});
 
     // ---------- Dashboard render ----------
     function renderDashboard(data, platform){
