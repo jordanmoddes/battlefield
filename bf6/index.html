@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#0b1220">
 
   <!-- Tab title + JM favicon -->
-  <title>BF6 Dashboard — Jmod Co.</title>
+  <title>Jmods BF6 Stats</title>
   <link rel="icon" type="image/png" href="/assets/Signature_WhiteTP.png" />
 
   <!-- Tailwind -->
@@ -241,24 +241,29 @@
       </div>
     </form>
 
-    <!-- DASHBOARD CONTENT -->
-    <main id="content" class="max-w-6xl mx-auto px-4 space-y-4 text-sm"></main>
+    <!-- DASHBOARD AREA (this is what gets snipped into a grid) -->
+    <div id="dashboard-root">
+      <!-- DASHBOARD CONTENT -->
+      <main id="content" class="max-w-6xl mx-auto px-4 space-y-4 text-sm"></main>
 
-    <!-- RAW JSON -->
-    <section class="max-w-6xl mx-auto mt-4 px-4">
-      <div class="card card-tight">
-        <div class="flex items-center justify-between mb-1">
-          <div class="font-semibold" style="color:var(--title)">Raw GameTools JSON</div>
-          <div id="status" class="text-xs" style="color:var(--sub)">Idle</div>
+      <!-- RAW JSON -->
+      <section class="max-w-6xl mx-auto mt-4 px-4">
+        <div class="card card-tight">
+          <div class="flex items-center justify-between mb-1">
+            <div class="font-semibold" style="color:var(--title)">Raw GameTools JSON</div>
+            <div id="status" class="text-xs" style="color:var(--sub)">Idle</div>
+          </div>
+          <pre id="json" class="json-output" style="color:var(--sub)">No data loaded yet.</pre>
         </div>
-        <pre id="json" class="json-output" style="color:var(--sub)">No data loaded yet.</pre>
-      </div>
-    </section>
+      </section>
 
-    <footer class="text-center text-xs mt-8 px-4" style="color:var(--sub)">
-      Powered directly by GameTools BF6 API • JM overlay &amp; layout by Jmod Co.
-    </footer>
-  </div>
+      <footer class="text-center text-xs mt-8 px-4" style="color:var(--sub)">
+        Powered directly by GameTools BF6 API • JM overlay &amp; layout by Jmod Co.
+      </footer>
+    </div>
+    <!-- end dashboard-root -->
+
+  </div><!-- /.page-shell -->
 
   <script>
     // ---------- Helpers ----------
@@ -330,16 +335,57 @@
       }
     });
 
-    // ---------- Snip ----------
+    // ---------- Snip (GRID: mobile 2×3, desktop 2×2) ----------
     snipBtn.addEventListener("click", async () => {
       try {
-        const canvas = await html2canvas(document.body, {
+        const target = document.getElementById("dashboard-root") || document.body;
+
+        // Decide layout based on viewport width
+        const isMobile = window.matchMedia("(max-width: 768px)").matches;
+        const slices   = isMobile ? 6 : 4;  // vertical pieces
+        const cols     = 2;
+        const rows     = isMobile ? 3 : 2;
+
+        const originalCanvas = await html2canvas(target, {
           useCORS:true,
           logging:false,
-          windowWidth:document.documentElement.scrollWidth,
-          windowHeight:document.documentElement.scrollHeight
+          windowWidth: document.documentElement.scrollWidth,
+          windowHeight: document.documentElement.scrollHeight
         });
-        canvas.toBlob(async (blob) => {
+
+        const sliceHeight = originalCanvas.height / slices;
+        const sliceWidth  = originalCanvas.width;
+
+        const gridCanvas = document.createElement("canvas");
+        gridCanvas.width  = cols * sliceWidth;
+        gridCanvas.height = rows * sliceHeight;
+
+        const ctx = gridCanvas.getContext("2d");
+
+        for (let i = 0; i < slices; i++) {
+          const sx = 0;
+          const sy = i * sliceHeight;
+
+          const col = i % cols;
+          const row = Math.floor(i / cols);
+
+          const dx = col * sliceWidth;
+          const dy = row * sliceHeight;
+
+          ctx.drawImage(
+            originalCanvas,
+            sx, sy, sliceWidth, sliceHeight,
+            dx, dy, sliceWidth, sliceHeight
+          );
+        }
+
+        const fileName = isMobile
+          ? "bf6-dashboard-mobile-2x3.png"
+          : "bf6-dashboard-desktop-2x2.png";
+
+        gridCanvas.toBlob(async (blob) => {
+          if (!blob) throw new Error("Could not create image blob.");
+
           try {
             await navigator.clipboard.write([
               new ClipboardItem({ "image/png": blob })
@@ -350,7 +396,7 @@
           } catch {
             const a = document.createElement("a");
             a.href = URL.createObjectURL(blob);
-            a.download = "bf6-dashboard.png";
+            a.download = fileName;
             a.click();
             URL.revokeObjectURL(a.href);
           }
@@ -765,6 +811,11 @@
     if (defaultTag) {
       loadStats(defaultPlatform, defaultTag);
     }
+
+    // URL defaults (kept at bottom so they exist before auto-load)
+    const params2 = new URLSearchParams(location.search);
+    const defaultTag2 = params2.get("tag") || "notJMODsuspended";
+    const defaultPlatform2 = params2.get("platform") || "psn";
   </script>
 </body>
 </html>
