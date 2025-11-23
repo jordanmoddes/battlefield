@@ -173,8 +173,8 @@
   <div class="jm-watermark"></div>
 
   <div class="page-shell">
-    <!-- NAV (hidden during snip) -->
-    <nav class="nav sticky top-0 z-50 snip-hide">
+    <!-- NAV -->
+    <nav class="nav sticky top-0 z-50">
       <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
         <a href="https://jordanmoddes.com" target="_blank" rel="noopener" class="brand text-lg">JMOD</a>
         <div class="flex items-center gap-2">
@@ -226,7 +226,7 @@
 
         <!-- Tag -->
         <div>
-          <div class="text-xs mb-1" style="color:var(--sub);">Gamer Tag</div>
+          <div class="text-xs mb-1" style="color:var(--sub);">OG Gamer Tag</div>
           <input id="tag" class="w-full rounded-md px-3 py-3 text-slate-900"
                  inputmode="text" autocomplete="off" autocapitalize="none"
                  placeholder="Enter gamer tag" />
@@ -241,36 +241,29 @@
       </div>
     </form>
 
-    <!-- DASHBOARD CONTENT -->
-    <main id="content" class="max-w-6xl mx-auto px-4 space-y-4 text-sm"></main>
+    <!-- DASHBOARD AREA (used for layout; snip captures whole body) -->
+    <div id="dashboard-root">
+      <!-- DASHBOARD CONTENT -->
+      <main id="content" class="max-w-6xl mx-auto px-4 space-y-4 text-sm"></main>
 
-    <!-- WATERMARK / STATUS + JSON (section hidden during snip, JSON tucked away) -->
-    <section class="max-w-6xl mx-auto mt-4 px-4 snip-hide">
-      <div class="card card-tight flex flex-col md:flex-row items-center gap-4">
-        <div class="flex-1 text-center md:text-left">
-          <div class="font-semibold mb-1" style="color:var(--title)">JMOD Overlay • BF6 Snapshot</div>
-          <p class="text-xs" style="color:var(--sub)">
-            Custom Battlefield 6 layout, rendered live from GameTools stats and captured via JMOD's Snip.
-          </p>
-          <div class="text-xs mt-1" style="color:var(--sub);">
-            Status: <span id="status">Idle</span>
+      <!-- RAW JSON -->
+      <section class="max-w-6xl mx-auto mt-4 px-4">
+        <div class="card card-tight">
+          <div class="flex items-center justify-between mb-1">
+            <div class="font-semibold" style="color:var(--title)">Raw GameTools JSON</div>
+            <div id="status" class="text-xs" style="color:var(--sub)">Idle</div>
           </div>
+          <pre id="json" class="json-output" style="color:var(--sub)">No data loaded yet.</pre>
         </div>
-        <div class="flex-1 flex justify-center">
-          <img src="/assets/Signature_BlackTP.png" alt="JMOD watermark" class="max-h-24 opacity-80">
-        </div>
-      </div>
+      </section>
 
-      <details class="mt-2">
-        <summary class="text-xs cursor-pointer" style="color:var(--sub)">Developer JSON output (click to expand)</summary>
-        <pre id="json" class="json-output mt-1" style="color:var(--sub)">No data loaded yet.</pre>
-      </details>
-    </section>
+      <footer class="text-center text-xs mt-8 px-4" style="color:var(--sub)">
+        Powered directly by GameTools BF6 API • JM overlay &amp; layout by Jmod Co.
+      </footer>
+    </div>
+    <!-- end dashboard-root -->
 
-    <footer class="text-center text-xs mt-8 px-4" style="color:var(--sub)">
-      Powered directly by GameTools BF6 API • JM overlay &amp; layout by Jmod Co.
-    </footer>
-  </div>
+  </div><!-- /.page-shell -->
 
   <script>
     // ---------- Helpers ----------
@@ -317,18 +310,26 @@
     const statusEl   = document.getElementById("status");
     const contentEl  = document.getElementById("content");
 
-    // ---------- Theme (default = DARK) ----------
-    const savedTheme = localStorage.getItem("bf6-theme");
+    // ---------- URL defaults (PS5 / psn) ----------
+    const params = new URLSearchParams(location.search);
+    const defaultTag = params.get("tag") || "notJMODsuspended";
+    const defaultPlatform = params.get("platform") || "psn";
 
+    tagEl.value = defaultTag;
+    const initialRadio = document.getElementById(defaultPlatform) || document.getElementById("psn");
+    if (initialRadio) initialRadio.checked = true;
+
+    function getPlatform(){
+      const r = document.querySelector("input[name='platform']:checked");
+      return r ? r.value : "psn";
+    }
+
+    // ---------- Theme ----------
+    const savedTheme = localStorage.getItem("bf6-theme");
     if (savedTheme === "light") {
       document.body.classList.add("light");
       themeBtn.textContent = "Dark";
-    } else {
-      document.body.classList.remove("light"); // hard reset to dark
-      themeBtn.textContent = "Light";
-      localStorage.setItem("bf6-theme", "dark");
     }
-
     themeBtn.addEventListener("click", () => {
       document.body.classList.toggle("light");
       const light = document.body.classList.contains("light");
@@ -350,21 +351,9 @@
 
     // ---------- Snip (GRID: mobile 3×2, desktop 2×2) ----------
     snipBtn.addEventListener("click", async () => {
-      // Temporarily force DARK for the screenshot
-      const wasLight = document.body.classList.contains("light");
-      if (wasLight) {
-        document.body.classList.remove("light");
-      }
-
-      // Hide nav + watermark/JSON section during snip
-      const hidden = [];
-      document.querySelectorAll(".snip-hide").forEach(el => {
-        hidden.push({ el, display: el.style.display });
-        el.style.display = "none";
-      });
-
       try {
         const target = document.body; // include BF image + watermark
+
         const isMobile = window.matchMedia("(max-width: 768px)").matches;
 
         // Mobile = 6 slices (vertical) → 3 columns × 2 rows
@@ -434,31 +423,8 @@
       } catch (e) {
         console.error(e);
         alert("Screenshot failed. Try again.");
-      } finally {
-        // Restore hidden elements
-        hidden.forEach(({ el, display }) => {
-          el.style.display = display;
-        });
-        // Restore theme
-        if (wasLight) {
-          document.body.classList.add("light");
-        }
       }
     });
-
-    // ---------- URL defaults (PS5 / psn) ----------
-    const params = new URLSearchParams(location.search);
-    const defaultTag = params.get("tag") || "notJMODsuspended";
-    const defaultPlatform = params.get("platform") || "psn";
-
-    tagEl.value = defaultTag;
-    const initialRadio = document.getElementById(defaultPlatform) || document.getElementById("psn");
-    if (initialRadio) initialRadio.checked = true;
-
-    function getPlatform(){
-      const r = document.querySelector("input[name='platform']:checked");
-      return r ? r.value : "psn";
-    }
 
     // ---------- Dashboard render ----------
     function renderDashboard(data, platform){
@@ -515,7 +481,6 @@
       const topWeapons  = [...weapons].sort((a,b)=> (b.kills||0)-(a.kills||0)).slice(0,8);
       const topVehicles = [...vehicles].sort((a,b)=> (b.kills||0)-(a.kills||0)).slice(0,6);
       const mapsSorted  = [...maps].sort((a,b)=> (b.secondsPlayed||0)-(a.secondsPlayed||0));
-      const topGadgets  = [...gadgets].sort((a,b)=> (b.kills||0)-(a.kills||0)).slice(0,6);
 
       const footKm  = distanceTraveled ? kmFromUnits(distanceTraveled.foot) : "—";
       const vehKm   = distanceTraveled ? kmFromUnits(distanceTraveled.vehicle) : "—";
@@ -603,26 +568,10 @@
           <div class="card">
             <div class="title">Combat Breakdown</div>
             <div class="grid-auto">
-              <div>
-                <span class="stat-label">Kill assists</span>
-                <div class="stat-value">${fmtNum(killAssists)}</div>
-              </div>
-              <div>
-                <span class="stat-label">Enemies spotted</span>
-                <div class="stat-value">${fmtNum(enemiesSpotted)}</div>
-              </div>
-              <div>
-                <span class="stat-label">Vehicles destroyed</span>
-                <div class="stat-value">${fmtNum(vehiclesDestroyed)}</div>
-              </div>
-              <div>
-                <span class="stat-label">Wins / Losses</span>
-                <div class="stat-value">${fmtNum(wins)} / ${fmtNum(loses)}</div>
-              </div>
-              <div>
-                <span class="stat-label">Win rate</span>
-                <div class="stat-value">${fmtPercentString(winPercent)}</div>
-              </div>
+              <div><span class="stat-label">Kill assists</span><div class="stat-value">${fmtNum(killAssists)}</div></div>
+              <div><span class="stat-label">Enemies spotted</span><div class="stat-value">${fmtNum(enemiesSpotted)}</div></div>
+              <div><span class="stat-label">Vehicles destroyed</span><div class="stat-value">${fmtNum(vehiclesDestroyed)}</div></div>
+              <div><span class="stat-label">Wins / Losses</span><div class="stat-value">${fmtNum(wins)} / ${fmtNum(loses)}</div></div>
             </div>
           </div>
 
@@ -756,23 +705,6 @@
           </div>
         </section>
 
-        <!-- Top Gadgets -->
-        <section class="card">
-          <div class="title">Top Gadgets</div>
-          <div class="grid-auto">
-            ${topGadgets.map(g => `
-              <div class="text-xs leading-snug">
-                <div class="font-semibold">${g.gadgetName}</div>
-                <div>
-                  Kills: <span class="font-semibold">${fmtNum(g.kills)}</span> •
-                  Uses: <span class="font-semibold">${fmtNum(g.uses)}</span> •
-                  Destroyed: <span class="font-semibold">${fmtNum(g.destroyed)}</span>
-                </div>
-              </div>
-            `).join("") || `<div class="text-xs" style="color:var(--sub);">No gadget data.</div>`}
-          </div>
-        </section>
-
         <!-- Maps & Objective -->
         <section class="grid md:grid-cols-[1.7fr,1.3fr] gap-3">
           <div class="card">
@@ -830,7 +762,7 @@
                 </span>
               </div>
               <div>
-                <span class="font-semibold">Gadgets (full list):</span>
+                <span class="font-semibold">Gadgets:</span>
                 <span style="color:var(--sub);">
                   ${gadgets.length ? gadgets.map(g => `${g.gadgetName} (${fmtNum(g.uses)} uses, ${fmtNum(g.kills)} kills)`).join(" • ") : "No gadget usage tracked."}
                 </span>
@@ -870,7 +802,7 @@
 
     // ---------- FORM SUBMIT ----------
     formEl.addEventListener("submit", (e) => {
-      e.preventDefault();                         // prevent page reload
+      e.preventDefault();
       const platform = getPlatform();
       const tag = (tagEl.value || "").trim() || "notJMODsuspended";
 
