@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#0b1220">
 
   <!-- Tab title + JM favicon -->
-  <title>BF Stats</title>
+  <title>BF6 Stats</title>
   <link rel="icon" type="image/png" href="https://raw.githubusercontent.com/jordanmoddes/jordanmoddes.github.io/main/assets/Signature_WhiteTP.png">
 
   <!-- Tailwind -->
@@ -344,6 +344,15 @@
       return cls ? `<span class="${cls}">(${txt})</span>` : `(${txt})`;
     }
 
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+    }
+
     async function load(platform, tag) {
       try {
         const res = await fetch(
@@ -375,7 +384,67 @@
 
     function render(data) {
       const o = data.overview || {};
-      contentEl.innerHTML = "";
+      const playerName = data.player?.name ?? tagEl.value;
+      const platformLabel = data.player?.platform ?? getPlatform();
+
+      const kills = o.kills ?? "—";
+      const kd = o.kd ?? "—";
+      const kpm = o.killsPerMinute ?? o.kpm ?? "—";
+      const acc = o.accuracy ?? o.acc ?? "—";
+
+      let winRate = o.winRate ?? o.winPercent ?? o.winrate ?? o.wlPercent ?? null;
+      const wins = o.wins ?? o.matchesWon;
+      const losses = o.losses ?? o.matchesLost;
+      if (!winRate && wins != null && losses != null && wins + losses > 0) {
+        winRate = ((wins / (wins + losses)) * 100).toFixed(1);
+      }
+      const winRateDisplay =
+        winRate == null
+          ? "—"
+          : String(winRate).includes("%")
+            ? String(winRate)
+            : `${winRate}%`;
+
+      // Prepare modes + total time for % played
+      const modes = (data.modes || []).slice();
+      let totalModeHours = 0;
+      modes.forEach(m => {
+        totalModeHours += Number(m.time) || 0;
+      });
+      modes.sort((a,b) => (Number(b.time) || 0) - (Number(a.time) || 0));
+
+      contentEl.innerHTML = `
+        <!-- Player snapshot with centered PLAYER + name and 5 highlights -->
+        <section class="card mb-4">
+          <div class="flex flex-col items-center text-center mb-4">
+            <div class="text-[0.65rem] uppercase tracking-[0.3em]" style="color:var(--sub);">Player</div>
+            <div class="text-2xl md:text-3xl font-extrabold">${playerName}</div>
+            <div class="text-xs mt-1" style="color:var(--sub);">${platformLabel}</div>
+          </div>
+          <div class="grid grid-cols-2 md:grid-cols-5 gap-3">
+            <div class="rounded-xl py-3 px-2 flex flex-col items-center justify-center text-center" style="background:var(--card-bg);border:1px solid var(--card-border);">
+              <div class="text-[0.65rem] uppercase tracking-[0.16em] mb-1" style="color:var(--sub);">Kills</div>
+              <div class="text-lg md:text-xl font-extrabold">${kills}</div>
+            </div>
+            <div class="rounded-xl py-3 px-2 flex flex-col items-center justify-center text-center" style="background:var(--card-bg);border:1px solid var(--card-border);">
+              <div class="text-[0.65rem] uppercase tracking-[0.16em] mb-1" style="color:var(--sub);">K/D Ratio</div>
+              <div class="text-lg md:text-xl font-extrabold">${kd}</div>
+            </div>
+            <div class="rounded-xl py-3 px-2 flex flex-col items-center justify-center text-center" style="background:var(--card-bg);border:1px solid var(--card-border);">
+              <div class="text-[0.65rem] uppercase tracking-[0.16em] mb-1" style="color:var(--sub);">Kills / Min</div>
+              <div class="text-lg md:text-xl font-extrabold">${kpm}</div>
+            </div>
+            <div class="rounded-xl py-3 px-2 flex flex-col items-center justify-center text-center" style="background:var(--card-bg);border:1px solid var(--card-border);">
+              <div class="text-[0.65rem] uppercase tracking-[0.16em] mb-1" style="color:var(--sub);">Accuracy</div>
+              <div class="text-lg md:text-xl font-extrabold">${acc}</div>
+            </div>
+            <div class="rounded-xl py-3 px-2 flex flex-col items-center justify-center text-center" style="background:var(--card-bg);border:1px solid var(--card-border);">
+              <div class="text-[0.65rem] uppercase tracking-[0.16em] mb-1" style="color:var(--sub);">Win Rate</div>
+              <div class="text-lg md:text-xl font-extrabold">${winRateDisplay}</div>
+            </div>
+          </div>
+        </section>
+      `;
 
       // Overview
       contentEl.innerHTML += `
@@ -412,18 +481,26 @@
           </div>
         </section>`;
 
-      // Modes
+      // Modes (simplified view)
       contentEl.innerHTML += `
         <section class="card">
           <div class="title">Modes</div>
           <div class="grid-auto">
-            ${(data.modes||[]).map(m=>`
-              <div>
-                <b>${m.name}</b><br/>
-                Kills: ${m.kills} &nbsp; KPM: ${m.kpm}<br/>
-                W/L: ${m.wl}% &nbsp; Wins: ${m.wins} • Losses: ${m.losses}<br/>
-                Time: ${m.time} hrs
-              </div>`).join("")}
+            ${modes.map(m => {
+              const modeKd = m.kd ?? "—";
+              const modeWl = m.wl ?? "—";
+              const pctPlayed = (totalModeHours > 0 && m.time != null)
+                ? ((Number(m.time) / totalModeHours) * 100).toFixed(1) + "%"
+                : "—";
+              return `
+                <div>
+                  <div class="font-semibold">${m.name}</div>
+                  <div>K/D Ratio: ${modeKd}</div>
+                  <div>W/L Ratio: ${modeWl}</div>
+                  <div>% Played: ${pctPlayed}</div>
+                </div>
+              `;
+            }).join("")}
           </div>
         </section>`;
 
@@ -442,7 +519,7 @@
           </div>
         </section>`;
 
-      // Gadgets
+      // Gadgets (already after Top Weapons)
       contentEl.innerHTML += `
         <section class="card">
           <div class="title">Top Gadgets</div>
@@ -457,11 +534,38 @@
           </div>
         </section>`;
 
-      // Footer card
+      // Footer card (player summary)
       contentEl.innerHTML += `
         <section class="card text-center" style="color:var(--sub)">
-          Player: <b>${data.player?.name ?? tagEl.value}</b>
-          (${data.player?.platform ?? getPlatform()}) • Hours: ${data.player?.hours ?? "—"}
+          Player: <b>${playerName}</b>
+          (${platformLabel}) • Hours: ${data.player?.hours ?? "—"}
+        </section>`;
+
+      // JM image + label before raw JSON
+      contentEl.innerHTML += `
+        <section class="card text-center">
+          <div class="flex flex-col items-center gap-3">
+            <img
+              src="https://raw.githubusercontent.com/jordanmoddes/jordanmoddes.github.io/main/assets/Signature_BlackTP.png"
+              alt="JM"
+              class="max-w-[160px] w-full opacity-80"
+            />
+            <div style="color:var(--sub);">
+              Jmod's Battlefield <b>Stat Page</b>
+            </div>
+          </div>
+        </section>`;
+
+      // Raw GameTools JSON (collapsible)
+      contentEl.innerHTML += `
+        <section class="card">
+          <div class="title">Raw GameTools JSON</div>
+          <details>
+            <summary class="cursor-pointer text-sm" style="color:var(--sub);">
+              Show / hide raw JSON
+            </summary>
+            <pre class="mt-3 text-xs overflow-x-auto whitespace-pre-wrap">${escapeHtml(JSON.stringify(data, null, 2))}</pre>
+          </details>
         </section>`;
     }
 
