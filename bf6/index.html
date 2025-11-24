@@ -6,8 +6,8 @@
   <meta name="theme-color" content="#0b1220">
 
   <!-- Tab title + JM favicon -->
-  <title>Jmods BF6 Stats</title>
-  <link rel="icon" type="image/png" href="/assets/Signature_WhiteTP.png" />
+  <title>JMods BF6 Stats</title>
+  <link rel="icon" type="image/png" href="https://raw.githubusercontent.com/jordanmoddes/jordanmoddes.github.io/main/assets/Signature_WhiteTP.png">
 
   <!-- Tailwind -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -29,14 +29,14 @@
       --rank-bottom:#ef4444;
     }
     body.light{
-      --bg-overlay: rgba(255,255,255,.60);
-      --card-bg: rgba(0,0,0,.04);
-      --card-border: rgba(15,23,42,.20);
+      --bg-overlay: rgba(255,255,255,.55);
+      --card-bg: rgba(0,0,0,.06);
+      --card-border: rgba(0,0,0,.18);
       --text:#0b1220;
       --sub:#374151;
       --title:#1d4ed8;
-      --nav-bg1: rgba(255,255,255,.9);
-      --nav-bg2: rgba(255,255,255,.6);
+      --nav-bg1: rgba(255,255,255,.8);
+      --nav-bg2: rgba(255,255,255,.4);
     }
     body{
       position:relative;
@@ -44,7 +44,7 @@
       color:var(--text);
       background:
         linear-gradient(180deg, var(--bg-overlay), var(--bg-overlay)),
-        url("https://assetsio.gnwcdn.com/battlefield-6-2.jpg?width=690&quality=85&format=jpg&dpr=3&auto=webp")
+        url('https://assetsio.gnwcdn.com/battlefield-6-2.jpg?width=690&quality=85&format=jpg&dpr=3&auto=webp')
           center/cover no-repeat fixed;
       font-family: system-ui,-apple-system,Segoe UI,Roboto,Inter,"Helvetica Neue",Arial,"Noto Sans","Apple Color Emoji","Segoe UI Emoji";
       -webkit-tap-highlight-color: transparent;
@@ -56,13 +56,14 @@
       position:fixed;
       inset:0;
       background:
-        url("/assets/Signature_BlackTP.png")
-        center/38% auto no-repeat;
-      opacity:0.5;
+      url("https://raw.githubusercontent.com/jordanmoddes/jordanmoddes.github.io/main/assets/Signature_BlackTP.png")
+      center/38% auto no-repeat;
+      opacity:0.5;             /* ~50% opacity */
       pointer-events:none;
       z-index:0;
     }
 
+    /* Ensure actual content sits above watermark */
     .page-shell{
       position:relative;
       z-index:1;
@@ -74,61 +75,18 @@
       border-radius:16px;
       padding:16px;
     }
-    .card-tight{
-      padding:12px 14px;
-    }
     .grid-auto{
       display:grid;
-      grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
-      gap:10px;
+      grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+      gap:12px;
     }
     .title{
       color:var(--title);
       font-weight:900;
-      font-size:1.05rem;
-      margin-bottom:.5rem;
-      letter-spacing:.03em;
+      font-size:1.25rem;
+      text-align:center;
+      margin-bottom:.75rem;
     }
-    .nav{
-      backdrop-filter: blur(6px);
-      background: linear-gradient(180deg, var(--nav-bg1), var(--nav-bg2));
-      border-bottom:1px solid var(--card-border);
-    }
-    .nav a{ color:var(--sub) }
-    .nav .brand{ font-weight:900; letter-spacing:.06em }
-    .nav .icon-btn{
-      background: var(--card-bg);
-      border:1px solid var(--card-border);
-      padding:.55rem .9rem;
-      border-radius:.7rem;
-      font-weight:700;
-      color:var(--text);
-      font-size:.8rem;
-    }
-    .nav .icon-btn:hover{ background: rgba(255,255,255,.12) }
-
-    .chip{
-      background: var(--card-bg);
-      border:1px solid var(--card-border);
-      padding:.4rem .7rem;
-      border-radius:.7rem;
-      font-size:.8rem;
-    }
-    .btn{
-      background:var(--bf-accent);
-      color:#0b0f1a;
-      font-weight:800;
-      letter-spacing:.02em;
-      padding:.7rem 1.4rem;
-      border-radius:9999px;
-      box-shadow:0 8px 24px rgba(255,106,0,.18);
-      min-width:9rem;
-      transition: transform .06s ease, filter .06s ease;
-      touch-action: manipulation;
-    }
-    .btn:hover{ filter:brightness(1.05); transform:translateY(-1px) }
-    .btn:active{ transform:translateY(0) }
-
     .radio{
       appearance:none;
       width:22px;
@@ -145,40 +103,59 @@
       border-radius:9999px;
       background:var(--title);
     }
-
-    .stat-label{
-      font-size:.7rem;
-      text-transform:uppercase;
-      letter-spacing:.08em;
-      color:var(--sub);
+    .chip{
+      background: var(--card-bg);
+      border:1px solid var(--card-border);
+      padding:.5rem .7rem;
+      border-radius:.7rem;
     }
-    .stat-value{
-      font-weight:600;
-      font-size:1rem;
+    .btn{
+      background:var(--bf-accent);
+      color:#0b0f1a;
+      font-weight:800;
+      letter-spacing:.02em;
+      padding:.9rem 1.35rem;
+      border-radius:9999px;
+      box-shadow:0 8px 24px rgba(255,106,0,.18);
+      min-width:9rem;
+      transition: transform .06s ease, filter .06s ease;
+      touch-action: manipulation;
     }
-
-    .json-output{
-      font-family: ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;
-      font-size:.78rem;
-      white-space:pre-wrap;
-      word-break:break-word;
-      max-height:420px;
-      overflow:auto;
+    .btn:hover{ filter:brightness(1.05); transform:translateY(-1px) }
+    .btn:active{ transform:translateY(0) }
+    .nav{
+      backdrop-filter: blur(6px);
+      background: linear-gradient(180deg, var(--nav-bg1), var(--nav-bg2));
+      border-bottom:1px solid var(--card-border);
     }
+    .nav a{ color:var(--sub) }
+    .nav .brand{ font-weight:900; letter-spacing:.06em }
+    .nav .icon-btn{
+      background: var(--card-bg);
+      border:1px solid var(--card-border);
+      padding:.55rem .9rem;
+      border-radius:.7rem;
+      font-weight:700;
+      color:var(--text);
+    }
+    .nav .icon-btn:hover{ background: rgba(255,255,255,.12) }
+    .rank-top{ color:var(--rank-top) }
+    .rank-bottom{ color:var(--rank-bottom) }
   </style>
 </head>
 
 <body class="pb-12">
-  <!-- Watermark -->
+  <!-- Watermark layer -->
   <div class="jm-watermark"></div>
 
+  <!-- Everything else sits above watermark -->
   <div class="page-shell">
-    <!-- NAV -->
+    <!-- Top Navigation -->
     <nav class="nav sticky top-0 z-50">
       <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
         <a href="https://jordanmoddes.com" target="_blank" rel="noopener" class="brand text-lg">JMOD</a>
         <div class="flex items-center gap-2">
-          <a class="icon-btn" href="https://gametools.network/stats" target="_blank" rel="noopener">GameTools</a>
+          <a class="icon-btn" href="https://www.ea.com/en/games/battlefield/battlefield-6/player-stats" target="_blank" rel="noopener">Battlefield</a>
           <button id="shareBtn" class="icon-btn">Share</button>
           <button id="snipBtn" class="icon-btn">Snip</button>
           <button id="themeBtn" class="icon-btn">Light</button>
@@ -186,47 +163,49 @@
       </div>
     </nav>
 
-    <!-- HERO -->
     <header class="text-center mt-6 mb-6 px-4">
       <h1 class="text-3xl md:text-4xl font-extrabold tracking-tight" style="color:var(--title)">
-        Jmod's Battlefield 6 — Stats Dashboard
+        Battlefield 6 Stats Dashboard
       </h1>
       <p class="text-sm" style="color:var(--sub)">
-        Powered directly by <span class="font-semibold">api.gametools.network</span>.  
-        Pick a platform, enter a tag, then hit <b style="color:var(--bf-accent)">LOAD</b>.
+        Pick a platform, enter a gamer tag, then hit <b style="color:var(--bf-accent)">LOAD</b>. Auto-refresh every 60s.
       </p>
     </header>
 
-    <!-- CONTROLS -->
+    <!-- Controls -->
     <form id="controls" class="max-w-6xl mx-auto grid grid-cols-1 gap-3 mb-6 px-4">
-      <div class="card grid grid-cols-1 md:grid-cols-[1.1fr_auto_1.2fr_auto] gap-3 items-end">
-        <!-- Platform -->
+      <div class="card grid grid-cols-1 md:grid-cols-[1fr_auto_1fr_auto] gap-3">
+        <!-- Platform radios -->
         <div>
-          <div class="text-xs mb-1" style="color:var(--sub);">Platform</div>
-          <div class="flex flex-wrap items-center gap-3">
+          <div class="text-xs" style="color:var(--sub);">Platform</div>
+          <div class="flex flex-wrap items-center gap-4 mt-1">
             <label class="flex items-center gap-2 cursor-pointer chip select-none">
-              <input class="radio" type="radio" name="platform" value="pc" id="pc" />
-              <span class="font-semibold">PC</span>
+              <input class="radio" type="radio" name="platform" value="EA"    id="ea"    />
+              <span class="font-semibold">EA</span>
             </label>
             <label class="flex items-center gap-2 cursor-pointer chip select-none">
-              <input class="radio" type="radio" name="platform" value="psn" id="psn" />
-              <span class="font-semibold">PlayStation</span>
+              <input class="radio" type="radio" name="platform" value="Steam" id="steam" />
+              <span class="font-semibold">Steam</span>
             </label>
             <label class="flex items-center gap-2 cursor-pointer chip select-none">
-              <input class="radio" type="radio" name="platform" value="xboxone" id="xboxone" />
+              <input class="radio" type="radio" name="platform" value="Xbox"  id="xbox"  />
               <span class="font-semibold">Xbox</span>
+            </label>
+            <label class="flex items-center gap-2 cursor-pointer chip select-none">
+              <input class="radio" type="radio" name="platform" value="PS5"   id="ps5"   />
+              <span class="font-semibold">PS5</span>
             </label>
           </div>
         </div>
 
-        <!-- LOAD -->
+        <!-- LOAD button -->
         <div class="flex items-end justify-center">
           <button id="loadBtn" type="submit" class="btn">LOAD</button>
         </div>
 
-        <!-- Tag -->
+        <!-- Gamer tag -->
         <div>
-          <div class="text-xs mb-1" style="color:var(--sub);">OG Gamer Tag</div>
+          <div class="text-xs" style="color:var(--sub);">Gamer Tag</div>
           <input id="tag" class="w-full rounded-md px-3 py-3 text-slate-900"
                  inputmode="text" autocomplete="off" autocapitalize="none"
                  placeholder="Enter gamer tag" />
@@ -241,599 +220,358 @@
       </div>
     </form>
 
-    <!-- DASHBOARD AREA (used for layout; snip captures whole body) -->
-    <div id="dashboard-root">
-      <!-- DASHBOARD CONTENT -->
-      <main id="content" class="max-w-6xl mx-auto px-4 space-y-4 text-sm"></main>
+    <main id="content" class="max-w-6xl mx-auto text-sm space-y-4 px-4"></main>
 
-      <!-- RAW JSON -->
-      <section class="max-w-6xl mx-auto mt-4 px-4">
-        <div class="card card-tight">
-          <div class="flex items-center justify-between mb-1">
-            <div class="font-semibold" style="color:var(--title)">Raw GameTools JSON</div>
-            <div id="status" class="text-xs" style="color:var(--sub)">Idle</div>
-          </div>
-          <pre id="json" class="json-output" style="color:var(--sub)">No data loaded yet.</pre>
-        </div>
-      </section>
-
-      <footer class="text-center text-xs mt-8 px-4" style="color:var(--sub)">
-        Powered directly by GameTools BF6 API • JM overlay &amp; layout by Jmod Co.
-      </footer>
-    </div>
-    <!-- end dashboard-root -->
-
-  </div><!-- /.page-shell -->
+    <footer class="text-center text-xs mt-10 px-4" style="color:var(--sub)">
+      Powered by Cloudflare Worker API • Theme inspired by BF6
+    </footer>
+  </div>
 
   <script>
-    // ---------- Helpers ----------
-    function buildApiUrl(platform, name){
-      const params = new URLSearchParams({
-        name,
-        platform,
-        lang:"en-us"
-      });
-      return "https://api.gametools.network/bf6/stats/?" + params.toString();
+    // ===== set this to your Worker URL (must be HTTPS) =====
+    const API_BASE = "https://jmodbattlefield.jmodwork.workers.dev";
+    // Hard-code game for now: Tracker Network Battlefield 2042
+    const GAME = "battlefield-2042";
+    // =======================================================
+    const REFRESH_MS = 60000;
+
+    // Theme (default dark)
+    const themeBtn = document.getElementById("themeBtn");
+    const savedTheme = localStorage.getItem("bf-theme");
+    if (savedTheme === "light") {
+      document.body.classList.add("light");
+      themeBtn.textContent = "Dark";
     }
-    function fmtNum(x){
-      if (x === undefined || x === null || isNaN(x)) return "—";
-      return Number(x).toLocaleString();
-    }
-    function fmtFloat(x, digits=2){
-      if (x === undefined || x === null || isNaN(x)) return "—";
-      return Number(x).toFixed(digits);
-    }
-    function fmtPercentString(str){
-      if (!str && str !== 0) return "—";
-      return String(str);
-    }
-    function fmtSeconds(sec){
-      if (!sec && sec !== 0) return "—";
-      const s = Number(sec);
-      const h = Math.floor(s/3600);
-      const m = Math.floor((s%3600)/60);
-      if (h === 0 && m === 0) return s + "s";
-      return h + "h " + m + "m";
-    }
-    function kmFromUnits(x){
-      if (!x && x !== 0) return "—";
-      return (Number(x)/1000).toFixed(1) + " km";
-    }
+    themeBtn.addEventListener("click", () => {
+      document.body.classList.toggle("light");
+      const light = document.body.classList.contains("light");
+      themeBtn.textContent = light ? "Dark" : "Light";
+      localStorage.setItem("bf-theme", light ? "light" : "dark");
+    });
 
-    const themeBtn   = document.getElementById("themeBtn");
-    const shareBtn   = document.getElementById("shareBtn");
-    const snipBtn    = document.getElementById("snipBtn");
-    const formEl     = document.getElementById("controls");
-    const tagEl      = document.getElementById("tag");
-    const updatedEl  = document.getElementById("updated");
-    const jsonEl     = document.getElementById("json");
-    const statusEl   = document.getElementById("status");
-    const contentEl  = document.getElementById("content");
-
-    // ---------- URL defaults (PS5 / psn) ----------
-    const params = new URLSearchParams(location.search);
-    const defaultTag = params.get("tag") || "notJMODsuspended";
-    const defaultPlatform = params.get("platform") || "psn";
-
-    tagEl.value = defaultTag;
-    const initialRadio = document.getElementById(defaultPlatform) || document.getElementById("psn");
-    if (initialRadio) initialRadio.checked = true;
-
-    function getPlatform(){
-      const r = document.querySelector("input[name='platform']:checked");
-      return r ? r.value : "psn";
-    }
-
-    // ---------- Theme (default = DARK) ----------
-const savedTheme = localStorage.getItem("bf6-theme");
-
-// Always start in DARK unless user explicitly chose light
-if (savedTheme === "light") {
-  document.body.classList.add("light");
-  themeBtn.textContent = "Dark";
-} else {
-  document.body.classList.remove("light"); // hard reset to dark
-  themeBtn.textContent = "Light";
-  localStorage.setItem("bf6-theme", "dark");
-}
-
-themeBtn.addEventListener("click", () => {
-  document.body.classList.toggle("light");
-  const light = document.body.classList.contains("light");
-  themeBtn.textContent = light ? "Dark" : "Light";
-  localStorage.setItem("bf6-theme", light ? "light" : "dark");
-});
-
-    // ---------- Share ----------
-    shareBtn.addEventListener("click", async () => {
+    // Share
+    document.getElementById("shareBtn").addEventListener("click", async () => {
       try {
         await navigator.clipboard.writeText(location.href);
-        const old = shareBtn.textContent;
-        shareBtn.textContent = "Copied!";
-        setTimeout(() => shareBtn.textContent = old, 1200);
+        const b = document.getElementById("shareBtn");
+        b.textContent = "Copied!";
+        setTimeout(() => (b.textContent = "Share"), 1200);
       } catch {
         alert("Could not copy. Please copy from the address bar.");
       }
     });
 
-    // ---------- Snip (GRID: mobile 3×2, desktop 2×2) ----------
-snipBtn.addEventListener("click", async () => {
-  // Temporarily force DARK for the screenshot
-  const wasLight = document.body.classList.contains("light");
-  if (wasLight) {
-    document.body.classList.remove("light");
-  }
-
-  try {
-    const target = document.body; // include BF image + watermark
-
-    const isMobile = window.matchMedia("(max-width: 768px)").matches;
-
-    // Mobile = 6 slices (vertical) → 3 columns × 2 rows
-    // Desktop = 4 slices (vertical) → 2 columns × 2 rows
-    const slices = isMobile ? 6 : 4;
-    const cols   = isMobile ? 3 : 2;
-    const rows   = 2;
-
-    const originalCanvas = await html2canvas(target, {
-      useCORS: true,
-      logging: false,
-      scrollX: 0,
-      scrollY: -window.scrollY,
-      windowWidth: document.documentElement.scrollWidth,
-      windowHeight: document.documentElement.scrollHeight,
-      backgroundColor: null
-    });
-
-    const sliceHeight = originalCanvas.height / slices;
-    const sliceWidth  = originalCanvas.width;
-
-    const gridCanvas = document.createElement("canvas");
-    gridCanvas.width  = cols * sliceWidth;
-    gridCanvas.height = rows * sliceHeight;
-
-    const ctx = gridCanvas.getContext("2d");
-
-    for (let i = 0; i < slices; i++) {
-      const sx = 0;
-      const sy = i * sliceHeight;
-
-      const col = i % cols;
-      const row = Math.floor(i / cols);
-
-      const dx = col * sliceWidth;
-      const dy = row * sliceHeight;
-
-      ctx.drawImage(
-        originalCanvas,
-        sx, sy, sliceWidth, sliceHeight,
-        dx, dy, sliceWidth, sliceHeight
-      );
-    }
-
-    const fileName = isMobile
-      ? "bf6-dashboard-mobile-3x2.png"
-      : "bf6-dashboard-desktop-2x2.png";
-
-    gridCanvas.toBlob(async (blob) => {
-      if (!blob) throw new Error("Could not create image blob.");
-
+    // Snip (clipboard on supported; download fallback for iOS)
+    document.getElementById("snipBtn").addEventListener("click", async () => {
       try {
-        await navigator.clipboard.write([
-          new ClipboardItem({ "image/png": blob })
-        ]);
-        const old = snipBtn.textContent;
-        snipBtn.textContent = "Snipped!";
-        setTimeout(() => snipBtn.textContent = old, 1200);
-      } catch {
-        const a = document.createElement("a");
-        a.href = URL.createObjectURL(blob);
-        a.download = fileName;
-        a.click();
-        URL.revokeObjectURL(a.href);
+        const canvas = await html2canvas(document.body, {
+          useCORS:true,
+          logging:false,
+          windowWidth:document.documentElement.scrollWidth,
+          windowHeight:document.documentElement.scrollHeight
+        });
+        canvas.toBlob(async (blob) => {
+          try {
+            await navigator.clipboard.write([
+              new ClipboardItem({ "image/png": blob })
+            ]);
+            const b = document.getElementById("snipBtn");
+            b.textContent = "Snipped!";
+            setTimeout(() => (b.textContent = "Snip"), 1200);
+          } catch {
+            const a = document.createElement("a");
+            a.href = URL.createObjectURL(blob);
+            a.download = "battlefield-dashboard.png";
+            a.click();
+            URL.revokeObjectURL(a.href);
+          }
+        });
+      } catch (e) {
+        alert("Screenshot failed. Try again.");
+        console.error(e);
       }
     });
-  } catch (e) {
-    console.error(e);
-    alert("Screenshot failed. Try again.");
-  } finally {
-    // Put the user back into whatever theme they had
-    if (wasLight) {
-      document.body.classList.add("light");
+
+    // ----- Dashboard logic (fetch only on LOAD + 60s poll) -----
+    const params = new URLSearchParams(location.search);
+    const defaultTag = params.get("tag") || "notJMODsuspended";
+    const defaultPlatform = params.get("platform") || "PS5";
+
+    const tagEl = document.getElementById("tag");
+    tagEl.value = defaultTag;
+
+    const idMap = { EA:"ea", Steam:"steam", Xbox:"xbox", PS5:"ps5" };
+    (document.getElementById(idMap[defaultPlatform]) || document.getElementById("ps5")).checked = true;
+
+    const formEl = document.getElementById("controls");
+    const updatedEl = document.getElementById("updated");
+    const contentEl = document.getElementById("content");
+
+    let poll = null;
+    function getPlatform() {
+      const r = document.querySelector("input[name='platform']:checked");
+      return r ? r.value : "PS5";
     }
-  }
-});
+    function startPolling(p, t) {
+      stopPolling();
+      poll = setInterval(() => load(p, t), REFRESH_MS);
+    }
+    function stopPolling() {
+      if (poll) {
+        clearInterval(poll);
+        poll = null;
+      }
+    }
 
-    // ---------- Dashboard render ----------
-    function renderDashboard(data, platform){
-      const {
-        userName,
-        avatar,
-        bestClass,
-        humanPrecentage,
-        kills,
-        deaths,
-        wins,
-        loses,
-        killsPerMinute,
-        killsPerMatch,
-        headShots,
-        winPercent,
-        headshots,
-        killDeath,
-        infantryKillDeath,
-        timePlayed,
-        accuracy,
-        revives,
-        heals,
-        resupplies,
-        repairs,
-        squadmateRevive,
-        gadgetsDestoyed,
-        playerTakeDowns,
-        matchesPlayed,
-        secondsPlayed,
-        saviorKills,
-        shotsFired,
-        shotsHit,
-        killAssists,
-        vehiclesDestroyed,
-        enemiesSpotted,
-        distanceTraveled,
-        objective,
-        XP,
-        classes = [],
-        weapons = [],
-        weaponGroups = [],
-        vehicles = [],
-        vehicleGroups = [],
-        maps = [],
-        gadgets = [],
-        inRound = {}
-      } = data || {};
+    formEl.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const platform = getPlatform();
+      const tag = tagEl.value.trim() || "notJMODsuspended";
+      history.replaceState(
+        null,
+        "",
+        `?${new URLSearchParams({ platform, tag }).toString()}`
+      );
+      load(platform, tag);
+      startPolling(platform, tag);
+    });
 
-      const xpTotal = XP && XP.length ? XP[0].total : null;
-      const xpPerf  = XP && XP.length ? XP[0].performance : null;
-      const xpAcc   = XP && XP.length ? XP[0].accolades : null;
+    function rankSpan(txt) {
+      if (!txt) return "";
+      const cls =
+        txt.toLowerCase().startsWith("top") ? "rank-top" :
+        txt.toLowerCase().startsWith("bottom") ? "rank-bottom" : "";
+      return cls ? `<span class="${cls}">(${txt})</span>` : `(${txt})`;
+    }
 
-      const topWeapons  = [...weapons].sort((a,b)=> (b.kills||0)-(a.kills||0)).slice(0,8);
-      const topVehicles = [...vehicles].sort((a,b)=> (b.kills||0)-(a.kills||0)).slice(0,6);
-      const mapsSorted  = [...maps].sort((a,b)=> (b.secondsPlayed||0)-(a.secondsPlayed||0));
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+    }
 
-      const footKm  = distanceTraveled ? kmFromUnits(distanceTraveled.foot) : "—";
-      const vehKm   = distanceTraveled ? kmFromUnits(distanceTraveled.vehicle) : "—";
-      const passKm  = distanceTraveled ? kmFromUnits(distanceTraveled.passenger) : "—";
+    async function load(platform, tag) {
+      try {
+        const res = await fetch(
+          `${API_BASE}/api/summary?game=${encodeURIComponent(GAME)}&platform=${encodeURIComponent(platform)}&tag=${encodeURIComponent(tag)}`,
+          { cache:"no-store" }
+        );
+        if (!res.ok) {
+          const msg = await res.text().catch(() => "");
+          throw new Error(msg || `API ${res.status}`);
+        }
+        const data = await res.json();
+        render(data);
+        updatedEl.textContent = new Date().toLocaleTimeString();
+      } catch (err) {
+        renderError(err.message || String(err));
+        updatedEl.textContent = "—";
+        console.error(err);
+      }
+    }
+
+    function renderError(msg) {
+      contentEl.innerHTML = `
+        <div class="card" style="background:#7f1d1d;border-color:#fecaca">
+          <div class="font-bold mb-1">Couldn’t load data</div>
+          <div class="text-xs">${msg}</div>
+          <div class="text-xs mt-2">Check API_BASE, Worker deployment, TRN key, and CORS headers.</div>
+        </div>`;
+    }
+
+    function render(data) {
+      const o = data.overview || {};
+      const playerName = data.player?.name ?? tagEl.value;
+      const platformLabel = data.player?.platform ?? getPlatform();
+
+      const kills = o.kills ?? "—";
+      const kd = o.kd ?? "—";
+      const kpm = o.killsPerMinute ?? o.kpm ?? "—";
+      const acc = o.accuracy ?? o.acc ?? "—";
+
+      let winRate = o.winRate ?? o.winPercent ?? o.winrate ?? o.wlPercent ?? null;
+      const wins = o.wins ?? o.matchesWon;
+      const losses = o.losses ?? o.matchesLost;
+      if (!winRate && wins != null && losses != null && wins + losses > 0) {
+        winRate = ((wins / (wins + losses)) * 100).toFixed(1);
+      }
+      const winRateDisplay =
+        winRate == null
+          ? "—"
+          : String(winRate).includes("%")
+            ? String(winRate)
+            : `${winRate}%`;
+
+      // Prepare modes + total time for % played
+      const modes = (data.modes || []).slice();
+      let totalModeHours = 0;
+      modes.forEach(m => {
+        totalModeHours += Number(m.time) || 0;
+      });
+      modes.sort((a,b) => (Number(b.time) || 0) - (Number(a.time) || 0));
 
       contentEl.innerHTML = `
-        <!-- Player Snapshot -->
-        <section class="grid md:grid-cols-[2.1fr,1.5fr] gap-3">
-          <div class="card">
-            <div class="flex items-center gap-4">
-              <img src="${avatar || ""}" alt="" class="w-12 h-12 rounded-full border border-slate-500 object-cover">
-              <div class="text-sm">
-                <div class="text-xs uppercase tracking-[0.18em]" style="color:var(--sub);">Player</div>
-                <div class="text-lg font-bold leading-tight">${userName || tagEl.value}</div>
-                <div class="text-xs" style="color:var(--sub);">
-                  Platform: <span class="font-semibold">${platform.toUpperCase()}</span>
-                  • Best class: <span class="font-semibold">${bestClass || "—"}</span>
-                  • Human lobbies: <span class="font-semibold">${fmtPercentString(humanPrecentage)}</span>
-                </div>
-                <div class="text-xs mt-1" style="color:var(--sub);">
-                  Time played: <span class="font-semibold">${timePlayed || fmtSeconds(secondsPlayed)}</span>
-                  • Matches: <span class="font-semibold">${fmtNum(matchesPlayed)}</span>
-                  • Win rate: <span class="font-semibold">${fmtPercentString(winPercent)}</span>
-                </div>
-              </div>
-            </div>
-            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4">
-              <div>
-                <div class="stat-label">Kills</div>
-                <div class="stat-value">${fmtNum(kills)}</div>
-                <div class="text-xs" style="color:var(--sub);">Deaths: ${fmtNum(deaths)}</div>
-              </div>
-              <div>
-                <div class="stat-label">K/D</div>
-                <div class="stat-value">${fmtFloat(killDeath)}</div>
-                <div class="text-xs" style="color:var(--sub);">Infantry: ${fmtFloat(infantryKillDeath)}</div>
-              </div>
-              <div>
-                <div class="stat-label">KPM</div>
-                <div class="stat-value">${fmtFloat(killsPerMinute)}</div>
-                <div class="text-xs" style="color:var(--sub);">Kills/Match: ${fmtFloat(killsPerMatch)}</div>
-              </div>
-              <div>
-                <div class="stat-label">Accuracy</div>
-                <div class="stat-value">${fmtPercentString(accuracy)}</div>
-                <div class="text-xs" style="color:var(--sub);">Headshots: ${fmtNum(headShots)} (${fmtPercentString(headshots)})</div>
-              </div>
-            </div>
+        <!-- Player snapshot with centered PLAYER + name and 5 highlights -->
+        <section class="card mb-4">
+          <div class="flex flex-col items-center text-center mb-4">
+            <div class="text-[0.65rem] uppercase tracking-[0.3em]" style="color:var(--sub);">Player</div>
+            <div class="text-2xl md:text-3xl font-extrabold">${playerName}</div>
+            <div class="text-xs mt-1" style="color:var(--sub);">${platformLabel}</div>
           </div>
-
-          <div class="card">
-            <div class="title">Teamplay &amp; Support</div>
-            <div class="grid-auto">
-              <div>
-                <div class="stat-label">Revives</div>
-                <div class="stat-value">${fmtNum(revives)}</div>
-                <div class="text-xs" style="color:var(--sub);">Squad revives: ${fmtNum(squadmateRevive)}</div>
-              </div>
-              <div>
-                <div class="stat-label">Heals / Resupplies</div>
-                <div class="stat-value">${fmtNum(heals)}</div>
-                <div class="text-xs" style="color:var(--sub);">Resupplies: ${fmtNum(resupplies)}</div>
-              </div>
-              <div>
-                <div class="stat-label">Repairs</div>
-                <div class="stat-value">${fmtNum(repairs)}</div>
-                <div class="text-xs" style="color:var(--sub);">Gadgets destroyed: ${fmtNum(gadgetsDestoyed)}</div>
-              </div>
-              <div>
-                <div class="stat-label">Clutch plays</div>
-                <div class="stat-value">${fmtNum(saviorKills)}</div>
-                <div class="text-xs" style="color:var(--sub);">Takedowns: ${fmtNum(playerTakeDowns)}</div>
-              </div>
+          <div class="grid grid-cols-2 md:grid-cols-5 gap-3">
+            <div class="rounded-xl py-3 px-2 flex flex-col items-center justify-center text-center" style="background:var(--card-bg);border:1px solid var(--card-border);">
+              <div class="text-[0.65rem] uppercase tracking-[0.16em] mb-1" style="color:var(--sub);">Kills</div>
+              <div class="text-lg md:text-xl font-extrabold">${kills}</div>
             </div>
-            <div class="mt-3 text-xs" style="color:var(--sub);">
-              Last round — Revives: ${fmtNum(inRound.revives)} • Resupplies: ${fmtNum(inRound.resupplies)} •
-              Spot assists: ${fmtNum(inRound.spotAssists)} • Throwables: ${fmtNum(inRound.thrownThrowables)} •
-              Takedowns: ${fmtNum(inRound.playerTakeDowns)}
+            <div class="rounded-xl py-3 px-2 flex flex-col items-center justify-center text-center" style="background:var(--card-bg);border:1px solid var(--card-border);">
+              <div class="text-[0.65rem] uppercase tracking-[0.16em] mb-1" style="color:var(--sub);">K/D Ratio</div>
+              <div class="text-lg md:text-xl font-extrabold">${kd}</div>
             </div>
-          </div>
-        </section>
-
-        <!-- Combat & Accuracy -->
-        <section class="grid md:grid-cols-2 gap-3">
-          <div class="card">
-            <div class="title">Combat Breakdown</div>
-            <div class="grid-auto">
-              <div><span class="stat-label">Kill assists</span><div class="stat-value">${fmtNum(killAssists)}</div></div>
-              <div><span class="stat-label">Enemies spotted</span><div class="stat-value">${fmtNum(enemiesSpotted)}</div></div>
-              <div><span class="stat-label">Vehicles destroyed</span><div class="stat-value">${fmtNum(vehiclesDestroyed)}</div></div>
-              <div><span class="stat-label">Wins / Losses</span><div class="stat-value">${fmtNum(wins)} / ${fmtNum(loses)}</div></div>
+            <div class="rounded-xl py-3 px-2 flex flex-col items-center justify-center text-center" style="background:var(--card-bg);border:1px solid var(--card-border);">
+              <div class="text-[0.65rem] uppercase tracking-[0.16em] mb-1" style="color:var(--sub);">Kills / Min</div>
+              <div class="text-lg md:text-xl font-extrabold">${kpm}</div>
             </div>
-          </div>
-
-          <div class="card">
-            <div class="title">Accuracy &amp; Volume</div>
-            <div class="grid-auto">
-              <div><span class="stat-label">Shots fired</span><div class="stat-value">${fmtNum(shotsFired)}</div></div>
-              <div><span class="stat-label">Shots hit</span><div class="stat-value">${fmtNum(shotsHit)}</div></div>
-              <div><span class="stat-label">Overall accuracy</span><div class="stat-value">${fmtPercentString(accuracy)}</div></div>
-              <div><span class="stat-label">Time played</span><div class="stat-value">${timePlayed || fmtSeconds(secondsPlayed)}</div></div>
+            <div class="rounded-xl py-3 px-2 flex flex-col items-center justify-center text-center" style="background:var(--card-bg);border:1px solid var(--card-border);">
+              <div class="text-[0.65rem] uppercase tracking-[0.16em] mb-1" style="color:var(--sub);">Accuracy</div>
+              <div class="text-lg md:text-xl font-extrabold">${acc}</div>
             </div>
-          </div>
-        </section>
-
-        <!-- Classes -->
-        <section class="card">
-          <div class="title">Classes</div>
-          <div class="grid-auto">
-            ${classes.map(c => `
-              <div>
-                <div class="font-semibold mb-1">${c.className}</div>
-                <div class="text-xs" style="color:var(--sub);">
-                  Time: ${fmtSeconds(c.secondsPlayed)} • Score: ${fmtNum(c.score)}
-                </div>
-                <div class="text-xs mt-1">
-                  Kills: <span class="font-semibold">${fmtNum(c.kills)}</span> •
-                  Deaths: <span class="font-semibold">${fmtNum(c.deaths)}</span> •
-                  K/D: <span class="font-semibold">${fmtFloat(c.killDeath)}</span> •
-                  KPM: <span class="font-semibold">${fmtFloat(c.kpm)}</span>
-                </div>
-                <div class="text-xs" style="color:var(--sub);">Assists: ${fmtNum(c.assists)} • Spawns: ${fmtNum(c.spawns)}</div>
-              </div>
-            `).join("") || `<div class="text-xs" style="color:var(--sub);">No class data.</div>`}
-          </div>
-        </section>
-
-        <!-- Weapon Groups & Top Weapons -->
-        <section class="grid md:grid-cols-[1.5fr,2fr] gap-3">
-          <div class="card">
-            <div class="title">Weapon Groups</div>
-            <div class="grid-auto">
-              ${weaponGroups.map(g => `
-                <div>
-                  <div class="font-semibold mb-1">${g.groupName}</div>
-                  <div class="text-xs">
-                    Kills: <span class="font-semibold">${fmtNum(g.kills)}</span> •
-                    KPM: <span class="font-semibold">${fmtFloat(g.killsPerMinute)}</span> •
-                    Accuracy: <span class="font-semibold">${fmtPercentString(g.accuracy)}</span>
-                  </div>
-                  <div class="text-xs" style="color:var(--sub);">
-                    Headshots: ${fmtNum(g.headshotKills)} (${fmtPercentString(g.headshots)}) •
-                    Damage: ${fmtNum(g.damage)}
-                  </div>
-                  <div class="text-xs" style="color:var(--sub);">
-                    Time: ${fmtSeconds(g.timeEquipped)} • Spawns: ${fmtNum(g.spawns)}
-                  </div>
-                </div>
-              `).join("") || `<div class="text-xs" style="color:var(--sub);">No weapon group data.</div>`}
-            </div>
-          </div>
-
-          <div class="card">
-            <div class="title">Top Weapons</div>
-            <div class="grid-auto">
-              ${topWeapons.map(w => `
-                <div class="flex gap-2">
-                  <img src="${w.image}" alt="" class="w-12 h-12 rounded-md object-cover border border-slate-600">
-                  <div class="text-xs leading-snug">
-                    <div class="font-semibold">${w.weaponName}</div>
-                    <div style="color:var(--sub);">${w.type}</div>
-                    <div>
-                      Kills: <span class="font-semibold">${fmtNum(w.kills)}</span> •
-                      KPM: <span class="font-semibold">${fmtFloat(w.killsPerMinute)}</span> •
-                      Accuracy: <span class="font-semibold">${fmtPercentString(w.accuracy)}</span>
-                    </div>
-                    <div style="color:var(--sub);">
-                      HS: ${fmtNum(w.headshotKills)} (${fmtPercentString(w.headshots)}) •
-                      Damage: ${fmtNum(w.damage)} • Time: ${fmtSeconds(w.timeEquipped)}
-                    </div>
-                  </div>
-                </div>
-              `).join("") || `<div class="text-xs" style="color:var(--sub);">No weapon data.</div>`}
-            </div>
-          </div>
-        </section>
-
-        <!-- Vehicles -->
-        <section class="grid md:grid-cols-[1.5fr,2fr] gap-3">
-          <div class="card">
-            <div class="title">Vehicle Groups</div>
-            <div class="grid-auto">
-              ${vehicleGroups.map(vg => `
-                <div>
-                  <div class="font-semibold mb-1">${vg.groupName}</div>
-                  <div class="text-xs">
-                    Kills: <span class="font-semibold">${fmtNum(vg.kills)}</span> •
-                    KPM: <span class="font-semibold">${fmtFloat(vg.killsPerMinute)}</span>
-                  </div>
-                  <div class="text-xs" style="color:var(--sub);">
-                    Damage: ${fmtNum(vg.damage)} • Spawns: ${fmtNum(vg.spawns)} •
-                    Destroyed: ${fmtNum(vg.destroyed)}
-                  </div>
-                  <div class="text-xs" style="color:var(--sub);">
-                    Time in: ${fmtSeconds(vg.timeIn)} • Roadkills: ${fmtNum(vg.roadKills)}
-                  </div>
-                </div>
-              `).join("") || `<div class="text-xs" style="color:var(--sub);">No vehicle group data.</div>`}
-            </div>
-          </div>
-
-          <div class="card">
-            <div class="title">Top Vehicles</div>
-            <div class="grid-auto">
-              ${topVehicles.map(v => `
-                <div class="flex gap-2">
-                  <img src="${v.image}" alt="" class="w-12 h-12 rounded-md object-cover border border-slate-600">
-                  <div class="text-xs leading-snug">
-                    <div class="font-semibold">${v.vehicleName}</div>
-                    <div style="color:var(--sub);">${v.type}</div>
-                    <div>
-                      Kills: <span class="font-semibold">${fmtNum(v.kills)}</span> •
-                      KPM: <span class="font-semibold">${fmtFloat(v.killsPerMinute)}</span>
-                    </div>
-                    <div style="color:var(--sub);">
-                      Damage: ${fmtNum(v.damage)} • Destroyed: ${fmtNum(v.destroyed)} • Time: ${fmtSeconds(v.timeIn)}
-                    </div>
-                  </div>
-                </div>
-              `).join("") || `<div class="text-xs" style="color:var(--sub);">No vehicle data.</div>`}
-            </div>
-          </div>
-        </section>
-
-        <!-- Maps & Objective -->
-        <section class="grid md:grid-cols-[1.7fr,1.3fr] gap-3">
-          <div class="card">
-            <div class="title">Maps</div>
-            <div class="grid-auto">
-              ${mapsSorted.map(m => `
-                <div class="flex gap-2">
-                  <img src="${m.image}" alt="" class="w-12 h-12 rounded-md object-cover border border-slate-600">
-                  <div class="text-xs leading-snug">
-                    <div class="font-semibold">${m.mapName}</div>
-                    <div style="color:var(--sub);">
-                      Matches: ${fmtNum(m.matches)} • Wins: ${fmtNum(m.wins)} • Losses: ${fmtNum(m.losses)}
-                    </div>
-                    <div style="color:var(--sub);">
-                      Win rate: ${fmtPercentString(m.winPercent)} • Time: ${fmtSeconds(m.secondsPlayed)}
-                    </div>
-                  </div>
-                </div>
-              `).join("") || `<div class="text-xs" style="color:var(--sub);">No map data.</div>`}
-            </div>
-          </div>
-
-          <div class="card">
-            <div class="title">Objectives &amp; Movement</div>
-            <div class="text-xs space-y-2">
-              <div>
-                <span class="font-semibold">Objective time:</span>
-                ${objective && objective.time ? fmtSeconds(objective.time.total) : "—"}
-                <br/>
-                <span style="color:var(--sub);">
-                  Attack: ${objective && objective.time ? fmtSeconds(objective.time.attacked) : "—"} •
-                  Defend: ${objective && objective.time ? fmtSeconds(objective.time.defended) : "—"}
-                </span>
-              </div>
-              <div>
-                <span class="font-semibold">Flags &amp; bombs:</span>
-                <span style="color:var(--sub);">
-                  Armed: ${objective ? fmtNum(objective.armed) : "—"} •
-                  Captured: ${objective ? fmtNum(objective.captured) : "—"} •
-                  Neutralized: ${objective ? fmtNum(objective.neutralized) : "—"} •
-                  Defused: ${objective ? fmtNum(objective.defused) : "—"} •
-                  Destroyed: ${objective ? fmtNum(objective.destroyed) : "—"}
-                </span>
-              </div>
-              <div>
-                <span class="font-semibold">Distance travelled:</span>
-                <span style="color:var(--sub);">
-                  On foot: ${footKm} • Vehicle: ${vehKm} • Passenger: ${passKm}
-                </span>
-              </div>
-              <div>
-                <span class="font-semibold">XP breakdown:</span>
-                <span style="color:var(--sub);">
-                  Total: ${fmtNum(xpTotal)} • Performance: ${fmtNum(xpPerf)} • Accolades: ${fmtNum(xpAcc)}
-                </span>
-              </div>
-              <div>
-                <span class="font-semibold">Gadgets:</span>
-                <span style="color:var(--sub);">
-                  ${gadgets.length ? gadgets.map(g => `${g.gadgetName} (${fmtNum(g.uses)} uses, ${fmtNum(g.kills)} kills)`).join(" • ") : "No gadget usage tracked."}
-                </span>
-              </div>
+            <div class="rounded-xl py-3 px-2 flex flex-col items-center justify-center text-center" style="background:var(--card-bg);border:1px solid var(--card-border);">
+              <div class="text-[0.65rem] uppercase tracking-[0.16em] mb-1" style="color:var(--sub);">Win Rate</div>
+              <div class="text-lg md:text-xl font-extrabold">${winRateDisplay}</div>
             </div>
           </div>
         </section>
       `;
+
+      // Overview
+      contentEl.innerHTML += `
+        <section class="card">
+          <div class="title">Overview</div>
+          <div class="grid-auto">
+            <div><b>Kills:</b> ${o.kills ?? "—"} ${o.killsRank ? rankSpan(o.killsRank) : ""}</div>
+            <div><b>Deaths:</b> ${o.deaths ?? "—"}</div>
+            <div><b>Assists:</b> ${o.assists ?? "—"} ${o.assistsRank ? rankSpan(o.assistsRank) : ""}</div>
+            <div><b>Revives:</b> ${o.revives ?? "—"} ${o.revivesRank ? rankSpan(o.revivesRank) : ""}</div>
+            <div><b>K/D:</b> ${o.kd ?? "—"}</div>
+            <div><b>Kills/Match:</b> ${o.killsPerMatch ?? "—"}</div>
+            <div><b>Kills/Minute:</b> ${o.killsPerMinute ?? "—"}</div>
+            <div><b>W/L:</b> ${o.wl ?? "—"} ${o.wlRank ? rankSpan(o.wlRank) : ""}</div>
+            <div><b>Best Class:</b> ${o.bestClass?.name ?? "—"}</div>
+            <div><b>Rank:</b> ${o.rank ?? "—"}</div>
+            <div><b>XP:</b> ${o.xp?.toLocaleString?.() ?? "—"}</div>
+            <div><b>Matches:</b> ${o.matches ?? "—"}</div>
+          </div>
+        </section>`;
+
+      // Classes
+      contentEl.innerHTML += `
+        <section class="card">
+          <div class="title">Classes</div>
+          <div class="grid-auto">
+            ${(data.classes||[]).map(x=>`
+              <div>
+                <b>${x.name}</b><br/>
+                ⭐ ${x.stars} &nbsp; Kills: ${x.kills}<br/>
+                K/D: ${x.kd} &nbsp; KPM: ${x.kpm}<br/>
+                Revives: ${x.revives} &nbsp; Time: ${x.hours} hrs
+              </div>`).join("")}
+          </div>
+        </section>`;
+
+      // Modes (simplified view)
+      contentEl.innerHTML += `
+        <section class="card">
+          <div class="title">Modes</div>
+          <div class="grid-auto">
+            ${modes.map(m => {
+              const modeKd = m.kd ?? "—";
+              const modeWl = m.wl ?? "—";
+              const pctPlayed = (totalModeHours > 0 && m.time != null)
+                ? ((Number(m.time) / totalModeHours) * 100).toFixed(1) + "%"
+                : "—";
+              return `
+                <div>
+                  <div class="font-semibold">${m.name}</div>
+                  <div>K/D Ratio: ${modeKd}</div>
+                  <div>W/L Ratio: ${modeWl}</div>
+                  <div>% Played: ${pctPlayed}</div>
+                </div>
+              `;
+            }).join("")}
+          </div>
+        </section>`;
+
+      // Weapons
+      contentEl.innerHTML += `
+        <section class="card">
+          <div class="title">Top Weapons</div>
+          <div class="grid-auto">
+            ${(data.weapons||[]).map(w=>`
+              <div>
+                <b>${w.name}</b><br/>
+                Kills: ${w.kills}<br/>
+                Accuracy: ${w.acc}<br/>
+                KPM: ${w.kpm}
+              </div>`).join("")}
+          </div>
+        </section>`;
+
+      // Gadgets (already after Top Weapons)
+      contentEl.innerHTML += `
+        <section class="card">
+          <div class="title">Top Gadgets</div>
+          <div class="grid-auto">
+            ${(data.gadgets||[]).map(g=>`
+              <div>
+                <b>${g.name}</b><br/>
+                Kills: ${g.kills}<br/>
+                KPM: ${g.kpm}<br/>
+                Time: ${g.hours} hrs
+              </div>`).join("")}
+          </div>
+        </section>`;
+
+      // Footer card (player summary)
+      contentEl.innerHTML += `
+        <section class="card text-center" style="color:var(--sub)">
+          Player: <b>${playerName}</b>
+          (${platformLabel}) • Hours: ${data.player?.hours ?? "—"}
+        </section>`;
+
+      // JM image + label before raw JSON
+      contentEl.innerHTML += `
+        <section class="card text-center">
+          <div class="flex flex-col items-center gap-3">
+            <img
+              src="https://raw.githubusercontent.com/jordanmoddes/jordanmoddes.github.io/main/assets/Signature_BlackTP.png"
+              alt="JM"
+              class="max-w-[160px] w-full opacity-80"
+            />
+            <div style="color:var(--sub);">
+              Jmod's Battlefield <b>Stat Page</b>
+            </div>
+          </div>
+        </section>`;
+
+      // Raw GameTools JSON (collapsible)
+      contentEl.innerHTML += `
+        <section class="card">
+          <div class="title">Raw GameTools JSON</div>
+          <details>
+            <summary class="cursor-pointer text-sm" style="color:var(--sub);">
+              Show / hide raw JSON
+            </summary>
+            <pre class="mt-3 text-xs overflow-x-auto whitespace-pre-wrap">${escapeHtml(JSON.stringify(data, null, 2))}</pre>
+          </details>
+        </section>`;
     }
 
-    // ---------- Load from API ----------
-    async function loadStats(platform, tag){
-      const url = buildApiUrl(platform, tag);
-      statusEl.textContent = "Loading…";
-      jsonEl.textContent = "Loading from " + url;
-      contentEl.innerHTML = "";
-
-      try{
-        const res = await fetch(url, { cache:"no-store" });
-        if(!res.ok){
-          const text = await res.text().catch(()=> "");
-          throw new Error(text || ("HTTP " + res.status));
-        }
-        const data = await res.json();
-        jsonEl.textContent = JSON.stringify(data, null, 2);
-        updatedEl.textContent = new Date().toLocaleTimeString();
-        statusEl.textContent = "OK";
-        renderDashboard(data, platform);
-      }catch(err){
-        console.error(err);
-        statusEl.textContent = "Error";
-        updatedEl.textContent = "—";
-        jsonEl.textContent = "Error loading from GameTools:\n\n" + (err.message || String(err));
-        contentEl.innerHTML = "";
-      }
-    }
-
-    // ---------- FORM SUBMIT ----------
-    formEl.addEventListener("submit", (e) => {
-      e.preventDefault();
-      const platform = getPlatform();
-      const tag = (tagEl.value || "").trim() || "notJMODsuspended";
-
-      const qs = new URLSearchParams({ platform, tag }).toString();
-      history.replaceState(null, "", "?" + qs);
-
-      loadStats(platform, tag);
-    });
-
-    // ---------- Auto-load on first visit ----------
-    if (defaultTag) {
-      loadStats(defaultPlatform, defaultTag);
-    }
+    // You can uncomment these to preload your own stats when the key works
+    // load(getPlatform(), tagEl.value);
+    // startPolling(getPlatform(), tagEl.value);
   </script>
 </body>
 </html>
