@@ -178,32 +178,42 @@
     }
   });
 
-  // ---------- High-res SNIP (grid, no overlap) ----------
-  snipBtn.addEventListener("click", async () => {
-    try{
-      const isMobile = window.matchMedia("(max-width: 768px)").matches;
+// SNIP HANDLER (Desktop = full page; Mobile = 4x3 mosaic)
+document.getElementById("snipBtn").addEventListener("click", async () => {
+  const wasLight = document.body.classList.contains("light");
+  if (wasLight) {
+    document.body.classList.remove("light"); // force dark mode for high-res capture
+  }
 
-      // Desktop: 2x2 (4 slices), Mobile: 2x3 (6 slices)
-      const cols   = 2;
-      const slices = isMobile ? 6 : 4;
-      const rows   = Math.ceil(slices / cols);
+  try {
+    const isMobile = window.matchMedia("(max-width: 768px)").matches;
 
-      const originalCanvas = await html2canvas(document.body, {
-        useCORS: true,
-        backgroundColor: null,
-        scrollX: 0,
-        scrollY: -window.scrollY,
-        windowWidth:  document.documentElement.scrollWidth,
-        windowHeight: document.documentElement.scrollHeight,
-        scale: 2
-      });
+    // Capture full page in one go
+    const originalCanvas = await html2canvas(document.body, {
+      useCORS: true,
+      backgroundColor: null,
+      scrollX: 0,
+      scrollY: -window.scrollY,
+      windowWidth: document.documentElement.scrollWidth,
+      windowHeight: document.documentElement.scrollHeight,
+      logging: false
+    });
 
-      const sliceWidth  = originalCanvas.width;
-      const sliceHeight = originalCanvas.height / slices;
+    let finalCanvas = originalCanvas;
+
+    if (isMobile) {
+      // Mobile → 4 across × 3 down grid
+      const slices = 12;
+      const cols = 4;
+      const rows = 3;
+
+      const sliceWidth = originalCanvas.width;
+      const sliceHeight = Math.floor(originalCanvas.height / slices);
 
       const gridCanvas = document.createElement("canvas");
-      gridCanvas.width  = cols * sliceWidth;
+      gridCanvas.width = cols * sliceWidth;
       gridCanvas.height = rows * sliceHeight;
+
       const ctx = gridCanvas.getContext("2d");
 
       for (let i = 0; i < slices; i++) {
@@ -212,7 +222,6 @@
 
         const col = i % cols;
         const row = Math.floor(i / cols);
-        if (row >= rows) break;
 
         const dx = col * sliceWidth;
         const dy = row * sliceHeight;
@@ -224,30 +233,37 @@
         );
       }
 
-      const fileName = isMobile
-        ? "bf6-dashboard-mobile-grid.png"
-        : "bf6-dashboard-desktop-grid.png";
-
-      gridCanvas.toBlob(async (blob) => {
-        if (!blob) return;
-        try {
-          await navigator.clipboard.write([
-            new ClipboardItem({ "image/png": blob })
-          ]);
-          alert("Snipped to clipboard!");
-        } catch {
-          const a = document.createElement("a");
-          a.href = URL.createObjectURL(blob);
-          a.download = fileName;
-          a.click();
-          URL.revokeObjectURL(a.href);
-        }
-      });
-    }catch(e){
-      console.error(e);
-      alert("Screenshot failed. Try again.");
+      finalCanvas = gridCanvas;
     }
-  });
+
+    // Copy to clipboard first, fallback to download
+    finalCanvas.toBlob(async (blob) => {
+      if (!blob) return alert("Failed to produce snip image.");
+
+      try {
+        await navigator.clipboard.write([
+          new ClipboardItem({ "image/png": blob })
+        ]);
+        const btn = document.getElementById("snipBtn");
+        const t = btn.textContent;
+        btn.textContent = "Snipped!";
+        setTimeout(() => (btn.textContent = t), 1200);
+      } catch {
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = isMobile ? "bf6-stats-4x3.png" : "bf6-stats-full.png";
+        a.click();
+      }
+    });
+
+  } catch (error) {
+    console.error(error);
+    alert("Screenshot failed. Try again.");
+  } finally {
+    if (wasLight) document.body.classList.add("light");
+  }
+});
+
 
   // ---------- Render full dashboard ----------
     function renderDashboard(data, platform){
