@@ -100,101 +100,230 @@
   </div>
 
   <script>
-    // CORRECT WORKING API URL (2025)
+    // ---------- API URL (direct to GameTools) ----------
     function buildApiUrl(platform, name){
-      const params = new URLSearchParams({ name, platform, lang: "en-us" });
-      const realUrl = `https://api.gametools.network/bf6/stats/?${params}`;
-      return `https://corsproxy.io/?${encodeURIComponent(realUrl)}`;
+      const params = new URLSearchParams({
+        name,
+        platform,
+        lang: "en-us"
+      });
+      // Direct call – this was your working pattern
+      return "https://api.gametools.network/bf6/stats/?" + params.toString();
     }
 
-    function fmtNum(x){ return x==null?"—":Number(x).toLocaleString(); }
-    function fmtFloat(x,d=2){ return x==null?"—":Number(x).toFixed(d); }
+    // ---------- Formatting helpers ----------
+    function fmtNum(x){
+      return x == null ? "—" : Number(x).toLocaleString();
+    }
+
+    function fmtFloat(x, d = 2){
+      return x == null ? "—" : Number(x).toFixed(d);
+    }
+
     function fmtSeconds(sec){
-      if(!sec) return "—";
-      const h = Math.floor(sec/3600), m = Math.floor((sec%3600)/60);
-      return h?`${h}h ${m}m`:`${m}m`;
+      if (!sec) return "—";
+      const h = Math.floor(sec / 3600);
+      const m = Math.floor((sec % 3600) / 60);
+      return h ? `${h}h ${m}m` : `${m}m`;
     }
-    function gadgetKpm(g){ return !g||!g.kills||!g.timeEquipped?"—":(g.kills/(g.timeEquipped/60)).toFixed(2); }
 
-    const tagEl = document.getElementById("tag");
-    const updatedEl = document.getElementById("updated");
-    const jsonEl = document.getElementById("json");
-    const statusEl = document.getElementById("status");
-    const contentEl = document.getElementById("content");
-    const formEl = document.getElementById("controls");
+    function gadgetKpm(g){
+      if (!g || !g.kills || !g.timeEquipped) return "—";
+      return (g.kills / (g.timeEquipped / 60)).toFixed(2);
+    }
 
-    // Theme
-    if(localStorage.getItem("bf6-theme")==="light"){ document.body.classList.add("light"); document.getElementById("themeBtn").textContent="Dark"; }
-    document.getElementById("themeBtn").addEventListener("click",()=>{ document.body.classList.toggle("light"); const light = document.body.classList.contains("light"); document.getElementById("themeBtn").textContent=light?"Dark":"Light"; localStorage.setItem("bf6-theme",light?"light":"dark"); });
+    function fmtPercentString(x){
+      if (x == null) return "—";
+      return String(x);
+    }
 
-    // Share & Snip
-    document.getElementById("shareBtn").addEventListener("click",()=>{ navigator.clipboard.writeText(location.href); alert("Link copied!"); });
-    document.getElementById("snipBtn").addEventListener("click",async()=>{ const c=await html2canvas(document.body,{useCORS:true,backgroundColor:null}); c.toBlob(b=>navigator.clipboard.write([new ClipboardItem({"image/png":b})]).then(()=>alert("Snipped to clipboard!")).catch(()=>{ const a=document.createElement("a"); a.href=URL.createObjectURL(b); a.download="bf6-stats.png"; a.click(); })); });
+    // ---------- DOM refs ----------
+    const tagEl      = document.getElementById("tag");
+    const updatedEl  = document.getElementById("updated");
+    const jsonEl     = document.getElementById("json");
+    const statusEl   = document.getElementById("status");
+    const contentEl  = document.getElementById("content");
+    const formEl     = document.getElementById("controls");
 
-    // FULL WORKING RENDER
+    // ---------- Theme ----------
+    if (localStorage.getItem("bf6-theme") === "light") {
+      document.body.classList.add("light");
+      document.getElementById("themeBtn").textContent = "Dark";
+    }
+
+    document.getElementById("themeBtn").addEventListener("click", () => {
+      document.body.classList.toggle("light");
+      const light = document.body.classList.contains("light");
+      document.getElementById("themeBtn").textContent = light ? "Dark" : "Light";
+      localStorage.setItem("bf6-theme", light ? "light" : "dark");
+    });
+
+    // ---------- Share & Snip ----------
+    document.getElementById("shareBtn").addEventListener("click", () => {
+      navigator.clipboard.writeText(location.href);
+      alert("Link copied!");
+    });
+
+    document.getElementById("snipBtn").addEventListener("click", async () => {
+      const c = await html2canvas(document.body, {
+        useCORS: true,
+        backgroundColor: null
+      });
+      c.toBlob((b) => {
+        navigator.clipboard.write([new ClipboardItem({ "image/png": b })])
+          .then(() => alert("Snipped to clipboard!"))
+          .catch(() => {
+            const a = document.createElement("a");
+            a.href = URL.createObjectURL(b);
+            a.download = "bf6-stats.png";
+            a.click();
+          });
+      });
+    });
+
+    // ---------- Dashboard render ----------
     function renderDashboard(data){
-      const {userName,avatar,kills,deaths,killDeath,killsPerMinute,accuracy,headshots,winPercent,timePlayed,revives,heals,resupplies,repairs,saviorKills,gadgets=[],gamemodes=[],weapons=[]} = data||{};
-      const topGadgets = [...gadgets].sort((a,b)=> (b.kills||0)-(a.kills||0)).slice(0,9);
-      const topWeapons = [...weapons].sort((a,b)=> (b.kills||0)-(a.kills||0)).slice(0,8);
+      const {
+        userName,
+        avatar,
+        kills,
+        deaths,
+        killDeath,
+        killsPerMinute,
+        accuracy,
+        headshots,
+        winPercent,
+        timePlayed,
+        revives,
+        heals,
+        resupplies,
+        repairs,
+        saviorKills,
+        gadgets = [],
+        gamemodes = [],
+        weapons = []
+      } = data || {};
+
+      const topGadgets = [...gadgets].sort((a, b) => (b.kills || 0) - (a.kills || 0)).slice(0, 9);
+      const topWeapons = [...weapons].sort((a, b) => (b.kills || 0) - (a.kills || 0)).slice(0, 8);
 
       contentEl.innerHTML = `
         <section class="card text-center">
-          <img src="${avatar||""}" class="w-20 h-20 rounded-full mx-auto border-4 border-cyan-400">
-          <h2 class="text-2xl font-bold mt-2">${userName||"notJMODsuspended"} (PSN)</h2>
-          <p class="text-sm" style="color:var(--sub)">Time played: ${timePlayed||fmtSeconds(data.secondsPlayed)||"—"}</p>
+          <img src="${avatar || ""}" class="w-20 h-20 rounded-full mx-auto border-4 border-cyan-400">
+          <h2 class="text-2xl font-bold mt-2">${userName || "notJMODsuspended"} (PSN)</h2>
+          <p class="text-sm" style="color:var(--sub)">
+            Time played: ${timePlayed || fmtSeconds(data.secondsPlayed) || "—"}
+          </p>
           <div class="grid grid-cols-3 md:grid-cols-6 gap-4 mt-4 text-center">
-            <div><div class="stat-label">Kills</div><div class="stat-value text-2xl">${fmtNum(kills)}</div></div>
-            <div><div class="stat-label">K/D</div><div class="stat-value text-2xl">${fmtFloat(killDeath)}</div></div>
-            <div><div class="stat-label">KPM</div><div class="stat-value text-2xl">${fmtFloat(killsPerMinute)}</div></div>
-            <div><div class="stat-label">Accuracy</div><div class="stat-value text-2xl">${fmtPercentString(accuracy)}</div></div>
-            <div><div class="stat-label">Win %</div><div class="stat-value text-2xl">${fmtPercentString(winPercent)}</div></div>
-            <div><div class="stat-label">Headshots</div><div class="stat-value text-2xl">${fmtPercentString(headshots)}</div></div>
+            <div>
+              <div class="stat-label">Kills</div>
+              <div class="stat-value text-2xl">${fmtNum(kills)}</div>
+            </div>
+            <div>
+              <div class="stat-label">K/D</div>
+              <div class="stat-value text-2xl">${fmtFloat(killDeath)}</div>
+            </div>
+            <div>
+              <div class="stat-label">KPM</div>
+              <div class="stat-value text-2xl">${fmtFloat(killsPerMinute)}</div>
+            </div>
+            <div>
+              <div class="stat-label">Accuracy</div>
+              <div class="stat-value text-2xl">${fmtPercentString(accuracy)}</div>
+            </div>
+            <div>
+              <div class="stat-label">Win %</div>
+              <div class="stat-value text-2xl">${fmtPercentString(winPercent)}</div>
+            </div>
+            <div>
+              <div class="stat-label">Headshots</div>
+              <div class="stat-value text-2xl">${fmtPercentString(headshots)}</div>
+            </div>
           </div>
         </section>
 
-        <section class="card"><div class="title">Top Gadgets</div>
+        <section class="card">
+          <div class="title">Top Gadgets</div>
           <div class="grid-auto">
-            ${topGadgets.map(g=>`<div><div class="font-bold">${g.gadgetName}</div>
-              <div class="text-xs">Kills: ${fmtNum(g.kills)} • KPM: ${gadgetKpm(g)} • Uses: ${fmtNum(g.uses)}</div>
-              <div class="text-xs" style="color:var(--sub)">Time: ${fmtSeconds(g.timeEquipped)}</div></div>`).join("") || "<div>No gadget data</div>"}
+            ${
+              topGadgets.length
+                ? topGadgets.map(g => `
+                    <div>
+                      <div class="font-bold">${g.gadgetName}</div>
+                      <div class="text-xs">
+                        Kills: ${fmtNum(g.kills)} •
+                        KPM: ${gadgetKpm(g)} •
+                        Uses: ${fmtNum(g.uses)}
+                      </div>
+                      <div class="text-xs" style="color:var(--sub)">
+                        Time: ${fmtSeconds(g.timeEquipped)}
+                      </div>
+                    </div>
+                  `).join("")
+                : "<div>No gadget data</div>"
+            }
           </div>
         </section>
 
-        <section class="card"><div class="title">Game Modes</div>
+        <section class="card">
+          <div class="title">Game Modes</div>
           <div class="grid-auto">
-            ${gamemodes.map(m=>`<div><div class="font-bold">${m.modeName}</div>
-              <div class="text-xs">K/D: ${fmtFloat(m.killDeath)} • Win%: ${fmtPercentString(m.winPercent)} • Time: ${fmtSeconds(m.secondsPlayed)}</div></div>`).join("") || "<div>No mode data</div>"}
+            ${
+              gamemodes.length
+                ? gamemodes.map(m => `
+                    <div>
+                      <div class="font-bold">${m.modeName}</div>
+                      <div class="text-xs">
+                        K/D: ${fmtFloat(m.killDeath)} •
+                        Win%: ${fmtPercentString(m.winPercent)} •
+                        Time: ${fmtSeconds(m.secondsPlayed)}
+                      </div>
+                    </div>
+                  `).join("")
+                : "<div>No mode data</div>"
+            }
           </div>
         </section>
       `;
     }
 
+    // ---------- Load stats ----------
     async function loadStats(){
       const platform = document.querySelector("input[name='platform']:checked")?.value || "psn";
-      const tag = tagEl.value.trim() || "notJMODsuspended";
-      const url = buildApiUrl(platform, tag);
+      const tag      = tagEl.value.trim() || "notJMODsuspended";
+      const url      = buildApiUrl(platform, tag);
 
       statusEl.textContent = "Loading...";
-      contentEl.innerHTML = "";
-      jsonEl.textContent = "Fetching...";
+      contentEl.innerHTML  = "";
+      jsonEl.textContent   = "Fetching...";
 
-      try{
-        const res = await fetch(url, {cache: "no-store"});
-        if(!res.ok) throw new Error("Not found / private");
+      try {
+        const res = await fetch(url, { cache: "no-store" });
+        if (!res.ok) throw new Error("Not found / private");
+
         const data = await res.json();
-        jsonEl.textContent = JSON.stringify(data,null,2);
+        jsonEl.textContent   = JSON.stringify(data, null, 2);
         updatedEl.textContent = new Date().toLocaleTimeString();
-        statusEl.textContent = "Loaded";
+        statusEl.textContent  = "Loaded";
         renderDashboard(data);
-      }catch(err){
+      } catch (err) {
         statusEl.textContent = "Error";
-        jsonEl.textContent = "Failed: " + err.message;
-        contentEl.innerHTML = `<div class="card text-red-400 text-center">No public stats found for <b>${tag}</b> on ${platform.toUpperCase()}.</div>`;
+        jsonEl.textContent   = "Failed: " + err.message;
+        contentEl.innerHTML  = `
+          <div class="card text-red-400 text-center">
+            No public stats found for <b>${tag}</b> on ${platform.toUpperCase()}.
+          </div>`;
       }
     }
 
-    formEl.addEventListener("submit", e=>{ e.preventDefault(); loadStats(); });
-    loadStats(); // Auto-load your profile
+    // ---------- Events ----------
+    formEl.addEventListener("submit", (e) => {
+      e.preventDefault();
+      loadStats();
+    });
+
+    // Auto-load default profile
+    loadStats();
   </script>
 </body>
 </html>
