@@ -250,7 +250,7 @@
   });
 
   // ---------- Render full dashboard ----------
-  function renderDashboard(data, platform){
+    function renderDashboard(data, platform){
     const {
       userName,
       avatar,
@@ -310,16 +310,27 @@
     const vehKm   = distanceTraveled ? kmFromUnits(distanceTraveled.vehicle) : "—";
     const passKm  = distanceTraveled ? kmFromUnits(distanceTraveled.passenger) : "—";
 
+    // Pull out specific gadgets if they exist
+    const repairToolGadget = gadgets.find(
+      g => g.gadgetName && g.gadgetName.toLowerCase().includes("repair")
+    );
+    const eodGadget = gadgets.find(
+      g => g.gadgetName && g.gadgetName.toLowerCase().includes("eod")
+    );
+
+    const repairFixes = repairToolGadget ? fmtNum(repairToolGadget.uses) : "—";
+    const eodKillsVal = eodGadget ? fmtNum(eodGadget.kills) : "—";
+
     contentEl.innerHTML = `
       <!-- Player Snapshot + Teamplay -->
       <section class="grid md:grid-cols-[2.1fr,1.5fr] gap-3">
         <div class="card">
-          <div class="flex items-center gap-4">
-            <img src="${avatar || ""}" alt="" class="w-12 h-12 rounded-full border border-slate-500 object-cover">
+          <div class="flex flex-col items-center gap-3 text-center">
+            <img src="${avatar || ""}" alt="" class="w-16 h-16 md:w-20 md:h-20 rounded-full border border-slate-500 object-cover">
             <div class="text-sm">
-              <div class="text-xs uppercase tracking-[0.18em]" style="color:var(--sub);">Player</div>
-              <div class="text-lg font-bold leading-tight">${userName || tagEl.value}</div>
-              <div class="text-xs" style="color:var(--sub);">
+              <div class="text-xs uppercase tracking-[0.18em]" style="color:var(--sub);">PLAYER</div>
+              <div class="text-xl font-bold leading-tight mt-1">${userName || tagEl.value}</div>
+              <div class="text-xs mt-1" style="color:var(--sub);">
                 Platform: <span class="font-semibold">${platform.toUpperCase()}</span>
                 • Best class: <span class="font-semibold">${bestClass || "—"}</span>
                 • Human lobbies: <span class="font-semibold">${fmtPercentString(humanPrecentage)}</span>
@@ -327,11 +338,13 @@
               <div class="text-xs mt-1" style="color:var(--sub);">
                 Time played: <span class="font-semibold">${timePlayed || fmtSeconds(secondsPlayed)}</span>
                 • Matches: <span class="font-semibold">${fmtNum(matchesPlayed)}</span>
-                • Win rate: <span class="font-semibold">${fmtPercentString(winPercent)}</span>
               </div>
             </div>
           </div>
+
+          <!-- 2-row main stat grid -->
           <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4">
+            <!-- Row 1 -->
             <div>
               <div class="stat-label">Kills</div>
               <div class="stat-value">${fmtNum(kills)}</div>
@@ -350,7 +363,35 @@
             <div>
               <div class="stat-label">Accuracy</div>
               <div class="stat-value">${fmtPercentString(accuracy)}</div>
-              <div class="text-xs" style="color:var(--sub);">Headshots: ${fmtNum(headShots)} (${fmtPercentString(headshots)})</div>
+              <div class="text-xs" style="color:var(--sub);">
+                Headshots: ${fmtNum(headShots)} (${fmtPercentString(headshots)})
+              </div>
+            </div>
+
+            <!-- Row 2 -->
+            <div>
+              <div class="stat-label">Win %</div>
+              <div class="stat-value">${fmtPercentString(winPercent)}</div>
+              <div class="text-xs" style="color:var(--sub);">Wins: ${fmtNum(wins)} • Losses: ${fmtNum(loses)}</div>
+            </div>
+            <div>
+              <div class="stat-label">Revives</div>
+              <div class="stat-value">${fmtNum(revives)}</div>
+              <div class="text-xs" style="color:var(--sub);">Squad: ${fmtNum(squadmateRevive)}</div>
+            </div>
+            <div>
+              <div class="stat-label">Repair Fixes</div>
+              <div class="stat-value">${repairFixes}</div>
+              <div class="text-xs" style="color:var(--sub);">
+                From gadget uses (Repair Tool)
+              </div>
+            </div>
+            <div>
+              <div class="stat-label">EOD Kills</div>
+              <div class="stat-value">${eodKillsVal}</div>
+              <div class="text-xs" style="color:var(--sub);">
+                Kills from EOD-type gadget
+              </div>
             </div>
           </div>
         </div>
@@ -592,13 +633,12 @@
         </div>
       </section>
 
-      <!-- Gadgets placeholder (separate card near bottom) -->
+      <!-- Gadgets placeholder -->
       <section class="card">
         <div class="title">Gadgets</div>
         <p class="text-xs" style="color:var(--sub);">
-          Battlefield 6's public GameTools API currently exposes very limited gadget data.
-          This panel will automatically populate with full gadget breakdowns
-          (kills, KPM, time equipped, uses, etc.) once the upstream API supports it.
+          Detailed BF6 gadget stats (per-gadget breakdown) will auto-populate here once the public API exposes
+          more data. For now, highlights like Repair Fixes and EOD Kills are pulled from gadget usage where available.
         </p>
       </section>
 
@@ -606,13 +646,13 @@
       <section class="card">
         <div class="title">Modes</div>
         <p class="text-xs" style="color:var(--sub);">
-          Per-mode stats (K/D, W/L, and % of total playtime) are not yet available through
-          the BF6 public API. This section is standing by and will auto-fill when that data
-          becomes available.
+          Per-mode stats (K/D, W/L and % of total playtime) are not yet exposed in the BF6 public API.
+          This panel will automatically fill when that data becomes available.
         </p>
       </section>
     `;
   }
+
 
   // ---------- Load from API ----------
   async function loadStats(){
