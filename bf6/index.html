@@ -378,41 +378,46 @@ snipBtn.addEventListener("click", async () => {
     // DESKTOP — 2x2 layout (1|3 / 2|4) with compression
     // ======================================================
     if (!isMobile) {
+      // ---------- DESKTOP: 2 x 2, order 1|3 / 2|4, with horizontal crop ----------
       const slices = 4;
       const cols   = 2;
       const rows   = 2;
-
-      // cut vertically into 4 slices
-      const order = [0, 2, 1, 3];
-
-      const sliceWidth      = originalCanvas.width;
-      const srcSliceHeight  = originalCanvas.height / slices;
-      const destSliceHeight = Math.floor(srcSliceHeight * 0.80); // reduce gap
-
+      const order  = [0, 2, 1, 3]; // index in vertical slices → grid slot
+    
+      const sliceWidth  = originalCanvas.width;
+      const sliceHeight = originalCanvas.height / slices;
+    
+      // Crop out left/right margins to reduce the middle gap
+      const cropLeft   = Math.floor(sliceWidth * 0.06);          // ~6% from left
+      const cropRight  = Math.floor(sliceWidth * 0.06);          // ~6% from right
+      const cropWidth  = sliceWidth - cropLeft - cropRight;      // central area only
+    
       const gridCanvas = document.createElement("canvas");
-      gridCanvas.width  = cols * sliceWidth;
-      gridCanvas.height = rows * destSliceHeight;
-
+      gridCanvas.width  = cols * cropWidth;
+      gridCanvas.height = rows * sliceHeight;
       const ctx = gridCanvas.getContext("2d");
-
+    
       order.forEach((srcIndex, outIndex) => {
         const col = outIndex % cols;
         const row = Math.floor(outIndex / cols);
-
-        const sx = 0;
-        const sy = srcIndex * srcSliceHeight;
-        const dx = col * sliceWidth;
-        const dy = row * destSliceHeight;
-
+    
+        const sx = cropLeft;                    // start crop a bit in from the left
+        const sy = srcIndex * sliceHeight;      // vertical slice position
+        const dx = col * cropWidth;
+        const dy = row * sliceHeight;
+    
         ctx.drawImage(
           originalCanvas,
-          sx, sy, sliceWidth, srcSliceHeight,
-          dx, dy, sliceWidth, destSliceHeight
+          sx, sy,              // source x,y (cropped)
+          cropWidth, sliceHeight, // source w,h
+          dx, dy,              // dest x,y
+          cropWidth, sliceHeight  // dest w,h
         );
       });
-
+    
       finalCanvas = gridCanvas;
     }
+
 
     // ======================================================
     // MOBILE — 4x3 correct order (no overlap)
