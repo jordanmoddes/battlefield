@@ -345,137 +345,145 @@ No data loaded yet.
     }
   });
 
-  // ======================================================
-  //  SNIP handler
-  //  - Always captures dark theme
-  //  - Uses #snip-root only (no nav/hero/controls/JSON)
-  //  - Desktop: 2x2 grid ordered 1|3 / 2|4
-  //  - Mobile: 4x3 grid ordered
-  //      Row1: 1,4,7,10
-  //      Row2: 2,5,8,11
-  //      Row3: 3,6,9,12
-  // ======================================================
-  snipBtn.addEventListener("click", async () => {
-    const wasLight = document.body.classList.contains("light");
-    if (wasLight) {
-      document.body.classList.remove("light"); // force dark for capture
-    }
+ // ======================================================
+//  FINAL SNIP HANDLER (Dark-only, no gaps, correct order)
+//  - Desktop = 2x2 (1|3 / 2|4) with compression (no black bands)
+//  - Mobile  = 4x3 (1,4,7,10 / 2,5,8,11 / 3,6,9,12)
+//  - Captures ONLY #snip-root
+// ======================================================
+snipBtn.addEventListener("click", async () => {
+  const wasLight = document.body.classList.contains("light");
+  if (wasLight) {
+    document.body.classList.remove("light"); // force dark mode for capture
+  }
 
-    try {
-      const isMobile = window.matchMedia("(max-width: 768px)").matches;
-      const target   = document.getElementById("snip-root") || document.body;
+  try {
+    const isMobile = window.matchMedia("(max-width: 768px)").matches;
+    const target   = document.getElementById("snip-root");
 
-      // Capture only the snip-root content
-      const originalCanvas = await html2canvas(target, {
-        useCORS: true,
-        backgroundColor: null,
-        scrollX: 0,
-        scrollY: -window.scrollY,
-        windowWidth:  target.scrollWidth,
-        windowHeight: target.scrollHeight,
-        logging: false
+    const originalCanvas = await html2canvas(target, {
+      useCORS: true,
+      backgroundColor: null,
+      scrollX: 0,
+      scrollY: -window.scrollY,
+      windowWidth:  target.scrollWidth,
+      windowHeight: target.scrollHeight,
+      scale: 2,
+      logging: false
+    });
+
+    let finalCanvas = originalCanvas;
+
+    // ======================================================
+    // DESKTOP — 2x2 layout (1|3 / 2|4) with compression
+    // ======================================================
+    if (!isMobile) {
+      const slices = 4;
+      const cols   = 2;
+      const rows   = 2;
+
+      // cut vertically into 4 slices
+      const order = [0, 2, 1, 3];
+
+      const sliceWidth      = originalCanvas.width;
+      const srcSliceHeight  = originalCanvas.height / slices;
+      const destSliceHeight = Math.floor(srcSliceHeight * 0.80); // reduce gap
+
+      const gridCanvas = document.createElement("canvas");
+      gridCanvas.width  = cols * sliceWidth;
+      gridCanvas.height = rows * destSliceHeight;
+
+      const ctx = gridCanvas.getContext("2d");
+
+      order.forEach((srcIndex, outIndex) => {
+        const col = outIndex % cols;
+        const row = Math.floor(outIndex / cols);
+
+        const sx = 0;
+        const sy = srcIndex * srcSliceHeight;
+        const dx = col * sliceWidth;
+        const dy = row * destSliceHeight;
+
+        ctx.drawImage(
+          originalCanvas,
+          sx, sy, sliceWidth, srcSliceHeight,
+          dx, dy, sliceWidth, destSliceHeight
+        );
       });
 
-      let finalCanvas = originalCanvas;
+      finalCanvas = gridCanvas;
+    }
 
-      if (!isMobile) {
-        // ---------- DESKTOP: 2 x 2, order 1|3 / 2|4 ----------
-        const slices = 4;
-        const cols   = 2;
-        const rows   = 2;
-        const order  = [0, 2, 1, 3]; // index in vertical slices → grid slot
+    // ======================================================
+    // MOBILE — 4x3 correct order (no overlap)
+    // ======================================================
+    else {
+      const slices = 12;
+      const cols   = 4;
+      const rows   = 3;
 
-        const sliceWidth  = originalCanvas.width;
-        const sliceHeight = originalCanvas.height / slices;
+      const order = [0,3,6,9, 1,4,7,10, 2,5,8,11];
 
-        const gridCanvas = document.createElement("canvas");
-        gridCanvas.width  = cols * sliceWidth;
-        gridCanvas.height = rows * sliceHeight;
-        const ctx = gridCanvas.getContext("2d");
+      const sliceWidth  = originalCanvas.width;
+      const sliceHeight = originalCanvas.height / slices;
 
-        order.forEach((srcIndex, outIndex) => {
-          const col = outIndex % cols;
-          const row = Math.floor(outIndex / cols);
+      const gridCanvas = document.createElement("canvas");
+      gridCanvas.width  = cols * sliceWidth;
+      gridCanvas.height = rows * sliceHeight;
 
-          const sx = 0;
-          const sy = srcIndex * sliceHeight;
-          const dx = col * sliceWidth;
-          const dy = row * sliceHeight;
+      const ctx = gridCanvas.getContext("2d");
 
-          ctx.drawImage(
-            originalCanvas,
-            sx, sy, sliceWidth, sliceHeight,
-            dx, dy, sliceWidth, sliceHeight
-          );
-        });
+      order.forEach((srcIndex, outIndex) => {
+        if (srcIndex >= slices) return;
 
-        finalCanvas = gridCanvas;
-      } else {
-        // ---------- MOBILE: 4 x 3, custom order ----------
-        const slices = 12;
-        const cols   = 4;
-        const rows   = 3;
+        const col = outIndex % cols;
+        const row = Math.floor(outIndex / cols);
 
-        // 0-based index order for vertical slices:
-        // 1,4,7,10, 2,5,8,11, 3,6,9,12
-        const order = [0, 3, 6, 9, 1, 4, 7, 10, 2, 5, 8, 11];
+        const sx = 0;
+        const sy = srcIndex * sliceHeight;
+        const dx = col * sliceWidth;
+        const dy = row * sliceHeight;
 
-        const sliceWidth  = originalCanvas.width;
-        const sliceHeight = originalCanvas.height / slices;
+        ctx.drawImage(
+          originalCanvas,
+          sx, sy, sliceWidth, sliceHeight,
+          dx, dy, sliceWidth, sliceHeight
+        );
+      });
 
-        const gridCanvas = document.createElement("canvas");
-        gridCanvas.width  = cols * sliceWidth;
-        gridCanvas.height = rows * sliceHeight;
-        const ctx = gridCanvas.getContext("2d");
+      finalCanvas = gridCanvas;
+    }
 
-        order.forEach((srcIndex, outIndex) => {
-          if (srcIndex >= slices) return;
-          const col = outIndex % cols;
-          const row = Math.floor(outIndex / cols);
+    // ======================================================
+    // Copy to clipboard (fallback to download)
+    // ======================================================
+    finalCanvas.toBlob(async (blob) => {
+      if (!blob) return alert("Failed to produce snip image.");
 
-          const sx = 0;
-          const sy = srcIndex * sliceHeight;
-          const dx = col * sliceWidth;
-          const dy = row * sliceHeight;
-
-          ctx.drawImage(
-            originalCanvas,
-            sx, sy, sliceWidth, sliceHeight,
-            dx, dy, sliceWidth, sliceHeight
-          );
-        });
-
-        finalCanvas = gridCanvas;
+      try {
+        await navigator.clipboard.write([
+          new ClipboardItem({ "image/png": blob })
+        ]);
+        const t = snipBtn.textContent;
+        snipBtn.textContent = "Snipped!";
+        setTimeout(() => snipBtn.textContent = t, 1200);
+      } catch {
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = isMobile
+          ? "bf6-mobile-4x3.png"
+          : "bf6-desktop-2x2.png";
+        a.click();
       }
+    });
 
-      // Copy to clipboard, fallback to download
-      finalCanvas.toBlob(async (blob) => {
-        if (!blob) {
-          alert("Failed to produce snip image.");
-          return;
-        }
-
-        try {
-          await navigator.clipboard.write([
-            new ClipboardItem({ "image/png": blob })
-          ]);
-          const t = snipBtn.textContent;
-          snipBtn.textContent = "Snipped!";
-          setTimeout(() => snipBtn.textContent = t, 1200);
-        } catch {
-          const a = document.createElement("a");
-          a.href = URL.createObjectURL(blob);
-          a.download = isMobile ? "bf6-stats-mobile-4x3.png" : "bf6-stats-desktop-2x2.png";
-          a.click();
-        }
-      });
-    } catch (error) {
-      console.error(error);
-      alert("Screenshot failed. Try again.");
-    } finally {
-      if (wasLight) document.body.classList.add("light");
-    }
-  });
+  } catch(err) {
+    console.error(err);
+    alert("Screenshot failed.");
+  } finally {
+    if (wasLight) document.body.classList.add("light");
+  }
+});
 
   // =====================================================
   //  Render the full dashboard from GameTools JSON data
