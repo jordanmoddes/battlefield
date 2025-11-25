@@ -99,235 +99,227 @@
     </footer>
   </div>
   <script>
-    // ---------- API URL (direct to GameTools) ----------
-    function buildApiUrl(platform, name){
-      const params = new URLSearchParams({
-        name,
-        platform,
-        lang: "en-us"
+  // ---------- API URL (via CORS proxy) ----------
+  function buildApiUrl(platform, name){
+    const params  = new URLSearchParams({ name, platform, lang: "en-us" });
+    const realUrl = `https://api.gametools.network/bf6/stats/?${params.toString()}`;
+    return `https://corsproxy.io/?${encodeURIComponent(realUrl)}`;
+  }
+
+  // ---------- Helpers ----------
+  function fmtNum(x){
+    if (x === undefined || x === null || isNaN(x)) return "—";
+    return Number(x).toLocaleString();
+  }
+  function fmtFloat(x, digits = 2){
+    if (x === undefined || x === null || isNaN(x)) return "—";
+    return Number(x).toFixed(digits);
+  }
+  function fmtSeconds(sec){
+    if (!sec && sec !== 0) return "—";
+    const s = Number(sec);
+    const h = Math.floor(s / 3600);
+    const m = Math.floor((s % 3600) / 60);
+    if (h === 0 && m === 0) return s + "s";
+    return h ? `${h}h ${m}m` : `${m}m`;
+  }
+  function kmFromUnits(x){
+    if (!x && x !== 0) return "—";
+    return (Number(x) / 1000).toFixed(1) + " km";
+  }
+  function fmtPercentString(x){
+    if (x == null) return "—";
+    return String(x);
+  }
+  function gadgetKpm(g){
+    if (!g || !g.kills || !g.timeEquipped) return "—";
+    return (g.kills / (g.timeEquipped / 60)).toFixed(2);
+  }
+
+  // ---------- DOM refs ----------
+  const themeBtn   = document.getElementById("themeBtn");
+  const shareBtn   = document.getElementById("shareBtn");
+  const snipBtn    = document.getElementById("snipBtn");
+  const formEl     = document.getElementById("controls");
+  const tagEl      = document.getElementById("tag");
+  const updatedEl  = document.getElementById("updated");
+  const jsonEl     = document.getElementById("json");
+  const statusEl   = document.getElementById("status");
+  const contentEl  = document.getElementById("content");
+
+  function getPlatform(){
+    const r = document.querySelector("input[name='platform']:checked");
+    return r ? r.value : "psn";
+  }
+
+  // ---------- Theme ----------
+  const savedTheme = localStorage.getItem("bf6-theme");
+  if (savedTheme === "light") {
+    document.body.classList.add("light");
+    themeBtn.textContent = "Dark";
+  } else {
+    themeBtn.textContent = "Light";
+  }
+
+  themeBtn.addEventListener("click", () => {
+    document.body.classList.toggle("light");
+    const light = document.body.classList.contains("light");
+    themeBtn.textContent = light ? "Dark" : "Light";
+    localStorage.setItem("bf6-theme", light ? "light" : "dark");
+  });
+
+  // ---------- Share ----------
+  shareBtn.addEventListener("click", async () => {
+    try {
+      await navigator.clipboard.writeText(location.href);
+      alert("Link copied!");
+    } catch {
+      alert("Could not copy. Please copy from the address bar.");
+    }
+  });
+
+  // ---------- High-res SNIP (grid, no overlap) ----------
+  snipBtn.addEventListener("click", async () => {
+    try{
+      const isMobile = window.matchMedia("(max-width: 768px)").matches;
+
+      // Desktop: 2x2 (4 slices), Mobile: 2x3 (6 slices)
+      const cols   = 2;
+      const slices = isMobile ? 6 : 4;
+      const rows   = Math.ceil(slices / cols);
+
+      const originalCanvas = await html2canvas(document.body, {
+        useCORS: true,
+        backgroundColor: null,
+        scrollX: 0,
+        scrollY: -window.scrollY,
+        windowWidth:  document.documentElement.scrollWidth,
+        windowHeight: document.documentElement.scrollHeight,
+        scale: 2
       });
-      return "https://api.gametools.network/bf6/stats/?" + params.toString();
-    }
 
-    // ---------- Formatting helpers ----------
-    function fmtNum(x){
-      return x == null ? "—" : Number(x).toLocaleString();
-    }
+      const sliceWidth  = originalCanvas.width;
+      const sliceHeight = originalCanvas.height / slices;
 
-    function fmtFloat(x, d = 2){
-      return x == null ? "—" : Number(x).toFixed(d);
-    }
+      const gridCanvas = document.createElement("canvas");
+      gridCanvas.width  = cols * sliceWidth;
+      gridCanvas.height = rows * sliceHeight;
+      const ctx = gridCanvas.getContext("2d");
 
-    function fmtSeconds(sec){
-      if (!sec && sec !== 0) return "—";
-      const s = Number(sec);
-      const h = Math.floor(s / 3600);
-      const m = Math.floor((s % 3600) / 60);
-      if (h === 0 && m === 0) return s + "s";
-      return h ? `${h}h ${m}m` : `${m}m`;
-    }
+      for (let i = 0; i < slices; i++) {
+        const sx = 0;
+        const sy = i * sliceHeight;
 
-    function gadgetKpm(g){
-      if (!g || !g.kills || !g.timeEquipped) return "—";
-      const minutes = Number(g.timeEquipped) / 60;
-      if (!minutes) return "—";
-      return (Number(g.kills) / minutes).toFixed(2);
-    }
+        const col = i % cols;
+        const row = Math.floor(i / cols);
+        if (row >= rows) break;
 
-    function fmtPercentString(x){
-      if (x == null) return "—";
-      return String(x);
-    }
+        const dx = col * sliceWidth;
+        const dy = row * sliceHeight;
 
-    // ---------- DOM refs ----------
-    const themeBtn   = document.getElementById("themeBtn");
-    const shareBtn   = document.getElementById("shareBtn");
-    const snipBtn    = document.getElementById("snipBtn");
-    const formEl     = document.getElementById("controls");
-    const tagEl      = document.getElementById("tag");
-    const updatedEl  = document.getElementById("updated");
-    const jsonEl     = document.getElementById("json");
-    const statusEl   = document.getElementById("status");
-    const contentEl  = document.getElementById("content");
-
-    // ---------- URL defaults ----------
-    const params = new URLSearchParams(location.search);
-    const defaultTag = params.get("tag") || "notJMODsuspended";
-    const defaultPlatform = params.get("platform") || "psn";
-
-    tagEl.value = defaultTag;
-    const initialRadio = document.getElementById(defaultPlatform) || document.getElementById("psn");
-    if (initialRadio) initialRadio.checked = true;
-
-    function getPlatform(){
-      const r = document.querySelector("input[name='platform']:checked");
-      return r ? r.value : "psn";
-    }
-
-    // ---------- Theme ----------
-    const savedTheme = localStorage.getItem("bf6-theme");
-
-    if (savedTheme === "light") {
-      document.body.classList.add("light");
-      themeBtn.textContent = "Dark";
-    } else {
-      document.body.classList.remove("light");
-      themeBtn.textContent = "Light";
-      localStorage.setItem("bf6-theme", "dark");
-    }
-
-    themeBtn.addEventListener("click", () => {
-      document.body.classList.toggle("light");
-      const light = document.body.classList.contains("light");
-      themeBtn.textContent = light ? "Dark" : "Light";
-      localStorage.setItem("bf6-theme", light ? "light" : "dark");
-    });
-
-    // ---------- Share ----------
-    shareBtn.addEventListener("click", async () => {
-      try {
-        await navigator.clipboard.writeText(location.href);
-        const old = shareBtn.textContent;
-        shareBtn.textContent = "Copied!";
-        setTimeout(() => (shareBtn.textContent = old), 1200);
-      } catch {
-        alert("Could not copy. Please copy from the address bar.");
+        ctx.drawImage(
+          originalCanvas,
+          sx, sy, sliceWidth, sliceHeight,
+          dx, dy, sliceWidth, sliceHeight
+        );
       }
-    });
 
-    // ---------- Snip (full-page) ----------
-    snipBtn.addEventListener("click", async () => {
-      try {
-        const canvas = await html2canvas(document.body, {
-          useCORS: true,
-          logging: false,
-          scrollX: 0,
-          scrollY: -window.scrollY,
-          windowWidth: document.documentElement.scrollWidth,
-          windowHeight: document.documentElement.scrollHeight,
-          backgroundColor: null
-        });
+      const fileName = isMobile
+        ? "bf6-dashboard-mobile-grid.png"
+        : "bf6-dashboard-desktop-grid.png";
 
-        canvas.toBlob(async (blob) => {
-          if (!blob) throw new Error("Could not create image blob.");
-
-          try {
-            await navigator.clipboard.write([
-              new ClipboardItem({ "image/png": blob })
-            ]);
-            const old = snipBtn.textContent;
-            snipBtn.textContent = "Snipped!";
-            setTimeout(() => (snipBtn.textContent = old), 1200);
-          } catch {
-            const a = document.createElement("a");
-            a.href = URL.createObjectURL(blob);
-            a.download = "bf6-dashboard.png";
-            a.click();
-            URL.revokeObjectURL(a.href);
-          }
-        });
-      } catch (e) {
-        console.error(e);
-        alert("Screenshot failed. Try again.");
-      }
-    });
-
-    // ---------- Dashboard render (FULL LAYOUT) ----------
-    function renderDashboard(data, platform){
-      const {
-        userName,
-        avatar,
-        bestClass,
-        humanPrecentage,
-        kills,
-        deaths,
-        wins,
-        loses,
-        killsPerMinute,
-        killsPerMatch,
-        headShots,
-        winPercent,
-        headshots,
-        killDeath,
-        infantryKillDeath,
-        timePlayed,
-        accuracy,
-        revives,
-        heals,
-        resupplies,
-        repairs,
-        squadmateRevive,
-        gadgetsDestoyed,
-        playerTakeDowns,
-        matchesPlayed,
-        secondsPlayed,
-        saviorKills,
-        shotsFired,
-        shotsHit,
-        killAssists,
-        vehiclesDestroyed,
-        enemiesSpotted,
-        distanceTraveled,
-        objective,
-        XP,
-        classes = [],
-        weapons = [],
-        weaponGroups = [],
-        vehicles = [],
-        vehicleGroups = [],
-        maps = [],
-        gadgets = [],
-        inRound = {},
-        gamemodes,
-        modes
-      } = data || {};
-
-      const xpTotal = XP && XP.length ? XP[0].total : null;
-      const xpPerf  = XP && XP.length ? XP[0].performance : null;
-      const xpAcc   = XP && XP.length ? XP[0].accolades : null;
-
-      const topWeapons  = [...weapons].sort((a,b)=> (b.kills||0)-(a.kills||0)).slice(0,8);
-      const topVehicles = [...vehicles].sort((a,b)=> (b.kills||0)-(a.kills||0)).slice(0,6);
-      const mapsSorted  = [...maps].sort((a,b)=> (b.secondsPlayed||0)-(a.secondsPlayed||0));
-      const topGadgets  = [...gadgets].sort((a,b)=> (b.kills||0)-(a.kills||0)).slice(0,8);
-
-      const footKm  = distanceTraveled ? (distanceTraveled.foot   ? (distanceTraveled.foot/1000).toFixed(1)+" km"   : "—") : "—";
-      const vehKm   = distanceTraveled ? (distanceTraveled.vehicle? (distanceTraveled.vehicle/1000).toFixed(1)+" km": "—") : "—";
-      const passKm  = distanceTraveled ? (distanceTraveled.passenger? (distanceTraveled.passenger/1000).toFixed(1)+" km": "—") : "—";
-
-      // Modes: handle both object and array shapes
-      let modesList = [];
-      const rawModes = gamemodes || modes || null;
-      if (Array.isArray(rawModes)) {
-        modesList = rawModes;
-      } else if (rawModes && typeof rawModes === "object") {
-        modesList = Object.values(rawModes);
-      }
-      let totalModeSeconds = 0;
-      modesList.forEach(m => {
-        totalModeSeconds += Number(m.secondsPlayed || m.timePlayed || m.time || 0);
+      gridCanvas.toBlob(async (blob) => {
+        if (!blob) return;
+        try {
+          await navigator.clipboard.write([
+            new ClipboardItem({ "image/png": blob })
+          ]);
+          alert("Snipped to clipboard!");
+        } catch {
+          const a = document.createElement("a");
+          a.href = URL.createObjectURL(blob);
+          a.download = fileName;
+          a.click();
+          URL.revokeObjectURL(a.href);
+        }
       });
-      modesList.sort((a,b) =>
-        (Number(b.secondsPlayed || b.timePlayed || b.time || 0)) -
-        (Number(a.secondsPlayed || a.timePlayed || a.time || 0))
-      );
+    }catch(e){
+      console.error(e);
+      alert("Screenshot failed. Try again.");
+    }
+  });
 
-      const playerDisplayName = userName || tagEl.value;
-      const winRateTile = fmtPercentString(winPercent);
+  // ---------- Render full dashboard ----------
+  function renderDashboard(data, platform){
+    const {
+      userName,
+      avatar,
+      bestClass,
+      humanPrecentage,
+      kills,
+      deaths,
+      wins,
+      loses,
+      killsPerMinute,
+      killsPerMatch,
+      headShots,
+      winPercent,
+      headshots,
+      killDeath,
+      infantryKillDeath,
+      timePlayed,
+      accuracy,
+      revives,
+      heals,
+      resupplies,
+      repairs,
+      squadmateRevive,
+      gadgetsDestoyed,
+      playerTakeDowns,
+      matchesPlayed,
+      secondsPlayed,
+      saviorKills,
+      shotsFired,
+      shotsHit,
+      killAssists,
+      vehiclesDestroyed,
+      enemiesSpotted,
+      distanceTraveled,
+      objective,
+      XP,
+      classes = [],
+      weapons = [],
+      weaponGroups = [],
+      vehicles = [],
+      vehicleGroups = [],
+      maps = [],
+      gadgets = [],
+      gamemodes = [],
+      inRound = {}
+    } = data || {};
 
-      contentEl.innerHTML = `
-        <!-- Player Snapshot -->
-        <section class="card">
-          <div class="flex flex-col items-center text-center gap-3">
-            <img src="${avatar || ""}" alt="" class="w-14 h-14 rounded-full border border-slate-500 object-cover">
-            <div>
-              <div class="text-[0.65rem] uppercase tracking-[0.3em]" style="color:var(--sub);">
-                Player
-              </div>
-              <div class="text-xl md:text-2xl font-extrabold leading-tight">
-                ${playerDisplayName}
-              </div>
-              <div class="text-xs mt-1" style="color:var(--sub);">
+    const xpTotal = XP && XP.length ? XP[0].total : null;
+    const xpPerf  = XP && XP.length ? XP[0].performance : null;
+    const xpAcc   = XP && XP.length ? XP[0].accolades : null;
+
+    const topWeapons  = [...weapons].sort((a,b)=> (b.kills||0)-(a.kills||0)).slice(0,8);
+    const topVehicles = [...vehicles].sort((a,b)=> (b.kills||0)-(a.kills||0)).slice(0,6);
+    const mapsSorted  = [...maps].sort((a,b)=> (b.secondsPlayed||0)-(a.secondsPlayed||0));
+
+    const footKm  = distanceTraveled ? kmFromUnits(distanceTraveled.foot) : "—";
+    const vehKm   = distanceTraveled ? kmFromUnits(distanceTraveled.vehicle) : "—";
+    const passKm  = distanceTraveled ? kmFromUnits(distanceTraveled.passenger) : "—";
+
+    contentEl.innerHTML = `
+      <!-- Player Snapshot + Teamplay -->
+      <section class="grid md:grid-cols-[2.1fr,1.5fr] gap-3">
+        <div class="card">
+          <div class="flex items-center gap-4">
+            <img src="${avatar || ""}" alt="" class="w-12 h-12 rounded-full border border-slate-500 object-cover">
+            <div class="text-sm">
+              <div class="text-xs uppercase tracking-[0.18em]" style="color:var(--sub);">Player</div>
+              <div class="text-lg font-bold leading-tight">${userName || tagEl.value}</div>
+              <div class="text-xs" style="color:var(--sub);">
                 Platform: <span class="font-semibold">${platform.toUpperCase()}</span>
                 • Best class: <span class="font-semibold">${bestClass || "—"}</span>
                 • Human lobbies: <span class="font-semibold">${fmtPercentString(humanPrecentage)}</span>
@@ -335,11 +327,11 @@
               <div class="text-xs mt-1" style="color:var(--sub);">
                 Time played: <span class="font-semibold">${timePlayed || fmtSeconds(secondsPlayed)}</span>
                 • Matches: <span class="font-semibold">${fmtNum(matchesPlayed)}</span>
+                • Win rate: <span class="font-semibold">${fmtPercentString(winPercent)}</span>
               </div>
             </div>
           </div>
-
-          <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mt-4">
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4">
             <div>
               <div class="stat-label">Kills</div>
               <div class="stat-value">${fmtNum(kills)}</div>
@@ -360,369 +352,317 @@
               <div class="stat-value">${fmtPercentString(accuracy)}</div>
               <div class="text-xs" style="color:var(--sub);">Headshots: ${fmtNum(headShots)} (${fmtPercentString(headshots)})</div>
             </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="title">Teamplay &amp; Support</div>
+          <div class="grid-auto">
             <div>
-              <div class="stat-label">Win Rate</div>
-              <div class="stat-value">${winRateTile}</div>
-              <div class="text-xs" style="color:var(--sub);">&nbsp;</div>
+              <div class="stat-label">Revives</div>
+              <div class="stat-value">${fmtNum(revives)}</div>
+              <div class="text-xs" style="color:var(--sub);">Squad revives: ${fmtNum(squadmateRevive)}</div>
+            </div>
+            <div>
+              <div class="stat-label">Heals / Resupplies</div>
+              <div class="stat-value">${fmtNum(heals)}</div>
+              <div class="text-xs" style="color:var(--sub);">Resupplies: ${fmtNum(resupplies)}</div>
+            </div>
+            <div>
+              <div class="stat-label">Repairs</div>
+              <div class="stat-value">${fmtNum(repairs)}</div>
+              <div class="text-xs" style="color:var(--sub);">Gadgets destroyed: ${fmtNum(gadgetsDestoyed)}</div>
+            </div>
+            <div>
+              <div class="stat-label">Clutch plays</div>
+              <div class="stat-value">${fmtNum(saviorKills)}</div>
+              <div class="text-xs" style="color:var(--sub);">Takedowns: ${fmtNum(playerTakeDowns)}</div>
             </div>
           </div>
-        </section>
-
-        <!-- Teamplay & Combat -->
-        <section class="grid md:grid-cols-[2.1fr,1.5fr] gap-3">
-          <div class="card">
-            <div class="title">Teamplay &amp; Support</div>
-            <div class="grid-auto">
-              <div>
-                <div class="stat-label">Revives</div>
-                <div class="stat-value">${fmtNum(revives)}</div>
-                <div class="text-xs" style="color:var(--sub);">Squad revives: ${fmtNum(squadmateRevive)}</div>
-              </div>
-              <div>
-                <div class="stat-label">Heals / Resupplies</div>
-                <div class="stat-value">${fmtNum(heals)}</div>
-                <div class="text-xs" style="color:var(--sub);">Resupplies: ${fmtNum(resupplies)}</div>
-              </div>
-              <div>
-                <div class="stat-label">Repairs</div>
-                <div class="stat-value">${fmtNum(repairs)}</div>
-                <div class="text-xs" style="color:var(--sub);">Gadgets destroyed: ${fmtNum(gadgetsDestoyed)}</div>
-              </div>
-              <div>
-                <div class="stat-label">Clutch plays</div>
-                <div class="stat-value">${fmtNum(saviorKills)}</div>
-                <div class="text-xs" style="color:var(--sub);">Takedowns: ${fmtNum(playerTakeDowns)}</div>
-              </div>
-            </div>
-            <div class="mt-3 text-xs" style="color:var(--sub);">
-              Last round — Revives: ${fmtNum(inRound.revives)} • Resupplies: ${fmtNum(inRound.resupplies)} •
-              Spot assists: ${fmtNum(inRound.spotAssists)} • Throwables: ${fmtNum(inRound.thrownThrowables)} •
-              Takedowns: ${fmtNum(inRound.playerTakeDowns)}
-            </div>
+          <div class="mt-3 text-xs" style="color:var(--sub);">
+            Last round — Revives: ${fmtNum(inRound.revives)} • Resupplies: ${fmtNum(inRound.resupplies)} •
+            Spot assists: ${fmtNum(inRound.spotAssists)} • Throwables: ${fmtNum(inRound.thrownThrowables)} •
+            Takedowns: ${fmtNum(inRound.playerTakeDowns)}
           </div>
+        </div>
+      </section>
 
-          <div class="card">
-            <div class="title">Combat &amp; Accuracy</div>
-            <div class="grid-auto">
-              <div><span class="stat-label">Kill assists</span><div class="stat-value">${fmtNum(killAssists)}</div></div>
-              <div><span class="stat-label">Enemies spotted</span><div class="stat-value">${fmtNum(enemiesSpotted)}</div></div>
-              <div><span class="stat-label">Vehicles destroyed</span><div class="stat-value">${fmtNum(vehiclesDestroyed)}</div></div>
-              <div><span class="stat-label">Wins / Losses</span><div class="stat-value">${fmtNum(wins)} / ${fmtNum(loses)}</div></div>
-              <div><span class="stat-label">Shots fired</span><div class="stat-value">${fmtNum(shotsFired)}</div></div>
-              <div><span class="stat-label">Shots hit</span><div class="stat-value">${fmtNum(shotsHit)}</div></div>
-            </div>
-          </div>
-        </section>
-
-        <!-- Classes -->
-        <section class="card">
-          <div class="title">Classes</div>
+      <!-- Combat & Accuracy -->
+      <section class="grid md:grid-cols-2 gap-3">
+        <div class="card">
+          <div class="title">Combat Breakdown</div>
           <div class="grid-auto">
-            ${
-              classes.length
-                ? classes.map(c => `
+            <div><span class="stat-label">Kill assists</span><div class="stat-value">${fmtNum(killAssists)}</div></div>
+            <div><span class="stat-label">Enemies spotted</span><div class="stat-value">${fmtNum(enemiesSpotted)}</div></div>
+            <div><span class="stat-label">Vehicles destroyed</span><div class="stat-value">${fmtNum(vehiclesDestroyed)}</div></div>
+            <div><span class="stat-label">Wins / Losses</span><div class="stat-value">${fmtNum(wins)} / ${fmtNum(loses)}</div></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="title">Accuracy &amp; Volume</div>
+          <div class="grid-auto">
+            <div><span class="stat-label">Shots fired</span><div class="stat-value">${fmtNum(shotsFired)}</div></div>
+            <div><span class="stat-label">Shots hit</span><div class="stat-value">${fmtNum(shotsHit)}</div></div>
+            <div><span class="stat-label">Overall accuracy</span><div class="stat-value">${fmtPercentString(accuracy)}</div></div>
+            <div><span class="stat-label">Time played</span><div class="stat-value">${timePlayed || fmtSeconds(secondsPlayed)}</div></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Classes -->
+      <section class="card">
+        <div class="title">Classes</div>
+        <div class="grid-auto">
+          ${classes.map(c => `
+            <div>
+              <div class="font-semibold mb-1">${c.className}</div>
+              <div class="text-xs" style="color:var(--sub);">
+                Time: ${fmtSeconds(c.secondsPlayed)} • Score: ${fmtNum(c.score)}
+              </div>
+              <div class="text-xs mt-1">
+                Kills: <span class="font-semibold">${fmtNum(c.kills)}</span> •
+                Deaths: <span class="font-semibold">${fmtNum(c.deaths)}</span> •
+                K/D: <span class="font-semibold">${fmtFloat(c.killDeath)}</span> •
+                KPM: <span class="font-semibold">${fmtFloat(c.kpm)}</span>
+              </div>
+              <div class="text-xs" style="color:var(--sub);">
+                Assists: ${fmtNum(c.assists)} • Spawns: ${fmtNum(c.spawns)}
+              </div>
+            </div>
+          `).join("") || `<div class="text-xs" style="color:var(--sub);">No class data.</div>`}
+        </div>
+      </section>
+
+      <!-- Weapon Groups & Top Weapons -->
+      <section class="grid md:grid-cols-[1.5fr,2fr] gap-3">
+        <div class="card">
+          <div class="title">Weapon Groups</div>
+          <div class="grid-auto">
+            ${weaponGroups.map(g => `
+              <div>
+                <div class="font-semibold mb-1">${g.groupName}</div>
+                <div class="text-xs">
+                  Kills: <span class="font-semibold">${fmtNum(g.kills)}</span> •
+                  KPM: <span class="font-semibold">${fmtFloat(g.killsPerMinute)}</span> •
+                  Accuracy: <span class="font-semibold">${fmtPercentString(g.accuracy)}</span>
+                </div>
+                <div class="text-xs" style="color:var(--sub);">
+                  Headshots: ${fmtNum(g.headshotKills)} (${fmtPercentString(g.headshots)}) •
+                  Damage: ${fmtNum(g.damage)}
+                </div>
+                <div class="text-xs" style="color:var(--sub);">
+                  Time: ${fmtSeconds(g.timeEquipped)} • Spawns: ${fmtNum(g.spawns)}
+                </div>
+              </div>
+            `).join("") || `<div class="text-xs" style="color:var(--sub);">No weapon group data.</div>`}
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="title">Top Weapons</div>
+          <div class="grid-auto">
+            ${topWeapons.map(w => `
+              <div class="flex gap-2">
+                <img src="${w.image}" alt="" class="w-12 h-12 rounded-md object-cover border border-slate-600">
+                <div class="text-xs leading-snug">
+                  <div class="font-semibold">${w.weaponName}</div>
+                  <div style="color:var(--sub);">${w.type}</div>
                   <div>
-                    <div class="font-semibold mb-1">${c.className}</div>
-                    <div class="text-xs" style="color:var(--sub);">
-                      Time: ${fmtSeconds(c.secondsPlayed)} • Score: ${fmtNum(c.score)}
-                    </div>
-                    <div class="text-xs mt-1">
-                      Kills: <span class="font-semibold">${fmtNum(c.kills)}</span> •
-                      Deaths: <span class="font-semibold">${fmtNum(c.deaths)}</span> •
-                      K/D: <span class="font-semibold">${fmtFloat(c.killDeath)}</span> •
-                      KPM: <span class="font-semibold">${fmtFloat(c.kpm)}</span>
-                    </div>
-                    <div class="text-xs" style="color:var(--sub);">
-                      Assists: ${fmtNum(c.assists)} • Spawns: ${fmtNum(c.spawns)}
-                    </div>
+                    Kills: <span class="font-semibold">${fmtNum(w.kills)}</span> •
+                    KPM: <span class="font-semibold">${fmtFloat(w.killsPerMinute)}</span> •
+                    Accuracy: <span class="font-semibold">${fmtPercentString(w.accuracy)}</span>
                   </div>
-                `).join("")
-                : `<div class="text-xs" style="color:var(--sub);">No class data.</div>`
-            }
-          </div>
-        </section>
-
-        <!-- Weapon Groups & Top Weapons -->
-        <section class="grid md:grid-cols-[1.5fr,2fr] gap-3">
-          <div class="card">
-            <div class="title">Weapon Groups</div>
-            <div class="grid-auto">
-              ${
-                weaponGroups.length
-                  ? weaponGroups.map(g => `
-                    <div>
-                      <div class="font-semibold mb-1">${g.groupName}</div>
-                      <div class="text-xs">
-                        Kills: <span class="font-semibold">${fmtNum(g.kills)}</span> •
-                        KPM: <span class="font-semibold">${fmtFloat(g.killsPerMinute)}</span> •
-                        Accuracy: <span class="font-semibold">${fmtPercentString(g.accuracy)}</span>
-                      </div>
-                      <div class="text-xs" style="color:var(--sub);">
-                        Headshots: ${fmtNum(g.headshotKills)} (${fmtPercentString(g.headshots)}) •
-                        Damage: ${fmtNum(g.damage)}
-                      </div>
-                      <div class="text-xs" style="color:var(--sub);">
-                        Time: ${fmtSeconds(g.timeEquipped)} • Spawns: ${fmtNum(g.spawns)}
-                      </div>
-                    </div>
-                  `).join("")
-                  : `<div class="text-xs" style="color:var(--sub);">No weapon group data.</div>`
-              }
-            </div>
-          </div>
-
-          <div class="card">
-            <div class="title">Top Weapons</div>
-            <div class="grid-auto">
-              ${
-                topWeapons.length
-                  ? topWeapons.map(w => `
-                    <div class="flex gap-2">
-                      <img src="${w.image}" alt="" class="w-12 h-12 rounded-md object-cover border border-slate-600">
-                      <div class="text-xs leading-snug">
-                        <div class="font-semibold">${w.weaponName}</div>
-                        <div style="color:var(--sub);">${w.type}</div>
-                        <div>
-                          Kills: <span class="font-semibold">${fmtNum(w.kills)}</span> •
-                          KPM: <span class="font-semibold">${fmtFloat(w.killsPerMinute)}</span> •
-                          Accuracy: <span class="font-semibold">${fmtPercentString(w.accuracy)}</span>
-                        </div>
-                        <div style="color:var(--sub);">
-                          HS: ${fmtNum(w.headshotKills)} (${fmtPercentString(w.headshots)}) •
-                          Damage: ${fmtNum(w.damage)} • Time: ${fmtSeconds(w.timeEquipped)}
-                        </div>
-                      </div>
-                    </div>
-                  `).join("")
-                  : `<div class="text-xs" style="color:var(--sub);">No weapon data.</div>`
-              }
-            </div>
-          </div>
-        </section>
-
-        <!-- Gadgets (own section) -->
-        <section class="card">
-          <div class="title">Gadgets</div>
-          <div class="grid-auto">
-            ${
-              topGadgets.length
-                ? topGadgets.map(g => `
-                  <div class="text-xs leading-snug">
-                    <div class="font-semibold">${g.gadgetName}</div>
-                    <div>
-                      Kills: <span class="font-semibold">${fmtNum(g.kills)}</span> •
-                      KPM: <span class="font-semibold">${gadgetKpm(g)}</span> •
-                      Uses: <span class="font-semibold">${fmtNum(g.uses)}</span>
-                    </div>
-                    <div style="color:var(--sub);">
-                      Time equipped: ${fmtSeconds(g.timeEquipped)}
-                    </div>
+                  <div style="color:var(--sub);">
+                    HS: ${fmtNum(w.headshotKills)} (${fmtPercentString(w.headshots)}) •
+                    Damage: ${fmtNum(w.damage)} • Time: ${fmtSeconds(w.timeEquipped)}
                   </div>
-                `).join("")
-                : `<div class="text-xs" style="color:var(--sub);">No gadget data.</div>`
-            }
-          </div>
-        </section>
-
-        <!-- Vehicles -->
-        <section class="grid md:grid-cols-[1.5fr,2fr] gap-3">
-          <div class="card">
-            <div class="title">Vehicle Groups</div>
-            <div class="grid-auto">
-              ${
-                vehicleGroups.length
-                  ? vehicleGroups.map(vg => `
-                    <div>
-                      <div class="font-semibold mb-1">${vg.groupName}</div>
-                      <div class="text-xs">
-                        Kills: <span class="font-semibold">${fmtNum(vg.kills)}</span> •
-                        KPM: <span class="font-semibold">${fmtFloat(vg.killsPerMinute)}</span>
-                      </div>
-                      <div class="text-xs" style="color:var(--sub);">
-                        Damage: ${fmtNum(vg.damage)} • Spawns: ${fmtNum(vg.spawns)} •
-                        Destroyed: ${fmtNum(vg.destroyed)}
-                      </div>
-                      <div class="text-xs" style="color:var(--sub);">
-                        Time in: ${fmtSeconds(vg.timeIn)} • Roadkills: ${fmtNum(vg.roadKills)}
-                      </div>
-                    </div>
-                  `).join("")
-                  : `<div class="text-xs" style="color:var(--sub);">No vehicle group data.</div>`
-              }
-            </div>
-          </div>
-
-          <div class="card">
-            <div class="title">Top Vehicles</div>
-            <div class="grid-auto">
-              ${
-                topVehicles.length
-                  ? topVehicles.map(v => `
-                    <div class="flex gap-2">
-                      <img src="${v.image}" alt="" class="w-12 h-12 rounded-md object-cover border border-slate-600">
-                      <div class="text-xs leading-snug">
-                        <div class="font-semibold">${v.vehicleName}</div>
-                        <div style="color:var(--sub);">${v.type}</div>
-                        <div>
-                          Kills: <span class="font-semibold">${fmtNum(v.kills)}</span> •
-                          KPM: <span class="font-semibold">${fmtFloat(v.killsPerMinute)}</span>
-                        </div>
-                        <div style="color:var(--sub);">
-                          Damage: ${fmtNum(v.damage)} • Destroyed: ${fmtNum(v.destroyed)} • Time: ${fmtSeconds(v.timeIn)}
-                        </div>
-                      </div>
-                    </div>
-                  `).join("")
-                  : `<div class="text-xs" style="color:var(--sub);">No vehicle data.</div>`
-              }
-            </div>
-          </div>
-        </section>
-
-        <!-- Maps & Objective -->
-        <section class="grid md:grid-cols-[1.7fr,1.3fr] gap-3">
-          <div class="card">
-            <div class="title">Maps</div>
-            <div class="grid-auto">
-              ${
-                mapsSorted.length
-                  ? mapsSorted.map(m => `
-                    <div class="flex gap-2">
-                      <img src="${m.image}" alt="" class="w-12 h-12 rounded-md object-cover border border-slate-600">
-                      <div class="text-xs leading-snug">
-                        <div class="font-semibold">${m.mapName}</div>
-                        <div style="color:var(--sub);">
-                          Matches: ${fmtNum(m.matches)} • Wins: ${fmtNum(m.wins)} • Losses: ${fmtNum(m.losses)}
-                        </div>
-                        <div style="color:var(--sub);">
-                          Win rate: ${fmtPercentString(m.winPercent)} • Time: ${fmtSeconds(m.secondsPlayed)}
-                        </div>
-                      </div>
-                    </div>
-                  `).join("")
-                  : `<div class="text-xs" style="color:var(--sub);">No map data.</div>`
-              }
-            </div>
-          </div>
-
-          <div class="card">
-            <div class="title">Objectives &amp; Movement</div>
-            <div class="text-xs space-y-2">
-              <div>
-                <span class="font-semibold">Objective time:</span>
-                ${objective && objective.time ? fmtSeconds(objective.time.total) : "—"}
-                <br/>
-                <span style="color:var(--sub);">
-                  Attack: ${objective && objective.time ? fmtSeconds(objective.time.attacked) : "—"} •
-                  Defend: ${objective && objective.time ? fmtSeconds(objective.time.defended) : "—"}
-                </span>
+                </div>
               </div>
-              <div>
-                <span class="font-semibold">Flags &amp; bombs:</span>
-                <span style="color:var(--sub);">
-                  Armed: ${objective ? fmtNum(objective.armed) : "—"} •
-                  Captured: ${objective ? fmtNum(objective.captured) : "—"} •
-                  Neutralized: ${objective ? fmtNum(objective.neutralized) : "—"} •
-                  Defused: ${objective ? fmtNum(objective.defused) : "—"} •
-                  Destroyed: ${objective ? fmtNum(objective.destroyed) : "—"}
-                </span>
-              </div>
-              <div>
-                <span class="font-semibold">Distance travelled:</span>
-                <span style="color:var(--sub);">
-                  On foot: ${footKm} • Vehicle: ${vehKm} • Passenger: ${passKm}
-                </span>
-              </div>
-              <div>
-                <span class="font-semibold">XP breakdown:</span>
-                <span style="color:var(--sub);">
-                  Total: ${fmtNum(xpTotal)} • Performance: ${fmtNum(xpPerf)} • Accolades: ${fmtNum(xpAcc)}
-                </span>
-              </div>
-            </div>
+            `).join("") || `<div class="text-xs" style="color:var(--sub);">No weapon data.</div>`}
           </div>
-        </section>
+        </div>
+      </section>
 
-        <!-- Modes -->
-        <section class="card">
-          <div class="title">Modes</div>
+      <!-- Vehicles -->
+      <section class="grid md:grid-cols-[1.5fr,2fr] gap-3">
+        <div class="card">
+          <div class="title">Vehicle Groups</div>
           <div class="grid-auto">
-            ${
-              modesList.length
-                ? modesList.map(m => {
-                    const name =
-                      m.modeName || m.name || m.gamemodeName || "Unknown";
-                    const kd = m.killDeath !== undefined ? fmtFloat(m.killDeath) :
-                               (m.kd !== undefined ? fmtFloat(m.kd) : "—");
-                    const wlRaw = m.winLoss ?? m.wl ?? m.winPercent ?? m.winPercentage;
-                    const wl = fmtPercentString(wlRaw);
-                    const sec = Number(m.secondsPlayed || m.timePlayed || m.time || 0);
-                    const pctPlayed = totalModeSeconds > 0
-                      ? (sec / totalModeSeconds * 100).toFixed(1) + "%"
-                      : "—";
-                    return `
-                      <div class="text-xs leading-snug">
-                        <div class="font-semibold">${name}</div>
-                        <div>K/D Ratio: ${kd}</div>
-                        <div>W/L Ratio: ${wl}</div>
-                        <div>% Played: ${pctPlayed}</div>
-                      </div>
-                    `;
-                  }).join("")
-                : `<div class="text-xs" style="color:var(--sub);">No mode data.</div>`
-            }
+            ${vehicleGroups.map(vg => `
+              <div>
+                <div class="font-semibold mb-1">${vg.groupName}</div>
+                <div class="text-xs">
+                  Kills: <span class="font-semibold">${fmtNum(vg.kills)}</span> •
+                  KPM: <span class="font-semibold">${fmtFloat(vg.killsPerMinute)}</span>
+                </div>
+                <div class="text-xs" style="color:var(--sub);">
+                  Damage: ${fmtNum(vg.damage)} • Spawns: ${fmtNum(vg.spawns)} •
+                  Destroyed: ${fmtNum(vg.destroyed)}
+                </div>
+                <div class="text-xs" style="color:var(--sub);">
+                  Time in: ${fmtSeconds(vg.timeIn)} • Roadkills: ${fmtNum(vg.roadKills)}
+                </div>
+              </div>
+            `).join("") || `<div class="text-xs" style="color:var(--sub);">No vehicle group data.</div>`}
           </div>
-        </section>
-      `;
-    }
+        </div>
 
-    // ---------- Load from API ----------
-    async function loadStats(platform, tag){
-      const url = buildApiUrl(platform, tag);
-      statusEl.textContent = "Loading…";
-      jsonEl.textContent = "Loading from " + url;
-      contentEl.innerHTML = "";
+        <div class="card">
+          <div class="title">Top Vehicles</div>
+          <div class="grid-auto">
+            ${topVehicles.map(v => `
+              <div class="flex gap-2">
+                <img src="${v.image}" alt="" class="w-12 h-12 rounded-md object-cover border border-slate-600">
+                <div class="text-xs leading-snug">
+                  <div class="font-semibold">${v.vehicleName}</div>
+                  <div style="color:var(--sub);">${v.type}</div>
+                  <div>
+                    Kills: <span class="font-semibold">${fmtNum(v.kills)}</span> •
+                    KPM: <span class="font-semibold">${fmtFloat(v.killsPerMinute)}</span>
+                  </div>
+                  <div style="color:var(--sub);">
+                    Damage: ${fmtNum(v.damage)} • Destroyed: ${fmtNum(v.destroyed)} •
+                    Time: ${fmtSeconds(v.timeIn)}
+                  </div>
+                </div>
+              </div>
+            `).join("") || `<div class="text-xs" style="color:var(--sub);">No vehicle data.</div>`}
+          </div>
+        </div>
+      </section>
 
-      try{
-        const res = await fetch(url, { cache:"no-store" });
-        if(!res.ok){
-          const text = await res.text().catch(()=> "");
-          throw new Error(text || ("HTTP " + res.status));
-        }
-        const data = await res.json();
-        jsonEl.textContent = JSON.stringify(data, null, 2);
-        updatedEl.textContent = new Date().toLocaleTimeString();
-        statusEl.textContent = "OK";
-        loadPlatform = getPlatform();
-        renderDashboard(data, loadPlatform);
-      }catch(err){
-        console.error(err);
-        statusEl.textContent = "Error";
-        updatedEl.textContent = "—";
-        jsonEl.textContent = "Error loading from GameTools:\n\n" + (err.message || String(err));
-        contentEl.innerHTML = `
-          <div class="card text-red-400 text-center">
-            No public stats found for <b>${tag}</b> on ${getPlatform().toUpperCase()}.
-          </div>`;
+      <!-- Maps & Objectives -->
+      <section class="grid md:grid-cols-[1.7fr,1.3fr] gap-3">
+        <div class="card">
+          <div class="title">Maps</div>
+          <div class="grid-auto">
+            ${mapsSorted.map(m => `
+              <div class="flex gap-2">
+                <img src="${m.image}" alt="" class="w-12 h-12 rounded-md object-cover border border-slate-600">
+                <div class="text-xs leading-snug">
+                  <div class="font-semibold">${m.mapName}</div>
+                  <div style="color:var(--sub);">
+                    Matches: ${fmtNum(m.matches)} • Wins: ${fmtNum(m.wins)} • Losses: ${fmtNum(m.losses)}
+                  </div>
+                  <div style="color:var(--sub);">
+                    Win rate: ${fmtPercentString(m.winPercent)} • Time: ${fmtSeconds(m.secondsPlayed)}
+                  </div>
+                </div>
+              </div>
+            `).join("") || `<div class="text-xs" style="color:var(--sub);">No map data.</div>`}
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="title">Objectives &amp; Movement</div>
+          <div class="text-xs space-y-2">
+            <div>
+              <span class="font-semibold">Objective time:</span>
+              ${objective && objective.time ? fmtSeconds(objective.time.total) : "—"}
+              <br/>
+              <span style="color:var(--sub);">
+                Attack: ${objective && objective.time ? fmtSeconds(objective.time.attacked) : "—"} •
+                Defend: ${objective && objective.time ? fmtSeconds(objective.time.defended) : "—"}
+              </span>
+            </div>
+            <div>
+              <span class="font-semibold">Flags &amp; bombs:</span>
+              <span style="color:var(--sub);">
+                Armed: ${objective ? fmtNum(objective.armed) : "—"} •
+                Captured: ${objective ? fmtNum(objective.captured) : "—"} •
+                Neutralized: ${objective ? fmtNum(objective.neutralized) : "—"} •
+                Defused: ${objective ? fmtNum(objective.defused) : "—"} •
+                Destroyed: ${objective ? fmtNum(objective.destroyed) : "—"}
+              </span>
+            </div>
+            <div>
+              <span class="font-semibold">Distance travelled:</span>
+              <span style="color:var(--sub);">
+                On foot: ${footKm} • Vehicle: ${vehKm} • Passenger: ${passKm}
+              </span>
+            </div>
+            <div>
+              <span class="font-semibold">XP breakdown:</span>
+              <span style="color:var(--sub);">
+                Total: ${fmtNum(xpTotal)} • Performance: ${fmtNum(xpPerf)} • Accolades: ${fmtNum(xpAcc)}
+              </span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Gadgets placeholder (separate card near bottom) -->
+      <section class="card">
+        <div class="title">Gadgets</div>
+        <p class="text-xs" style="color:var(--sub);">
+          Battlefield 6's public GameTools API currently exposes very limited gadget data.
+          This panel will automatically populate with full gadget breakdowns
+          (kills, KPM, time equipped, uses, etc.) once the upstream API supports it.
+        </p>
+      </section>
+
+      <!-- Modes placeholder -->
+      <section class="card">
+        <div class="title">Modes</div>
+        <p class="text-xs" style="color:var(--sub);">
+          Per-mode stats (K/D, W/L, and % of total playtime) are not yet available through
+          the BF6 public API. This section is standing by and will auto-fill when that data
+          becomes available.
+        </p>
+      </section>
+    `;
+  }
+
+  // ---------- Load from API ----------
+  async function loadStats(){
+    const platform = getPlatform();
+    const tag      = (tagEl.value || "").trim() || "notJMODsuspended";
+    const url      = buildApiUrl(platform, tag);
+
+    statusEl.textContent = "Loading…";
+    contentEl.innerHTML  = "";
+    jsonEl.textContent   = "Fetching from " + url;
+
+    try{
+      const res = await fetch(url, { cache:"no-store" });
+      if (!res.ok) {
+        const text = await res.text().catch(()=> "");
+        throw new Error(text || ("HTTP " + res.status));
       }
+      const data = await res.json();
+      jsonEl.textContent    = JSON.stringify(data, null, 2);
+      updatedEl.textContent = new Date().toLocaleTimeString();
+      statusEl.textContent  = "OK";
+      renderDashboard(data, platform);
+    }catch(err){
+      console.error(err);
+      statusEl.textContent  = "Error";
+      updatedEl.textContent = "—";
+      jsonEl.textContent    = "Error loading from GameTools:\n\n" + (err.message || String(err));
+      contentEl.innerHTML   =
+        `<div class="card text-red-400 text-center">
+           No public stats found for <b>${tag}</b> on ${platform.toUpperCase()}.
+         </div>`;
     }
+  }
 
-    // ---------- Form submit ----------
-    formEl.addEventListener("submit", (e) => {
-      e.preventDefault();
-      const platform = getPlatform();
-      const tag = (tagEl.value || "").trim() || "notJMODsuspended";
+  // ---------- Form submit + initial load ----------
+  formEl.addEventListener("submit", (e) => {
+    e.preventDefault();
+    loadStats();
+  });
 
-      const qs = new URLSearchParams({ platform, tag }).toString();
-      history.replaceState(null, "", "?" + qs);
+  // Auto-load defaults from URL or notJMODsuspended
+  const params          = new URLSearchParams(location.search);
+  const defaultTag      = params.get("tag") || "notJMODsuspended";
+  const defaultPlatform = params.get("platform") || "psn";
 
-      loadStats(platform, tag);
-    });
+  tagEl.value = defaultTag;
+  const initialRadio = document.getElementById(defaultPlatform) || document.getElementById("psn");
+  if (initialRadio) initialRadio.checked = true;
 
-    // ---------- Auto-load ----------
-    if (defaultTag) {
-      loadStats(defaultPlatform, defaultTag);
-    }
-  </script>
+  loadStats();
+</script>
 </body>
 </html>
