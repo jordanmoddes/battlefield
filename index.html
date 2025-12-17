@@ -5,13 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#0b1220">
 
-  <!-- Tab title + JM favicon -->
   <title>BF6 Stats</title>
   <link rel="icon" type="image/png" href="https://raw.githubusercontent.com/jordanmoddes/jordanmoddes.github.io/main/assets/Signature_WhiteTP.png">
 
-  <!-- Tailwind -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- html2canvas for Snip -->
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 
   <style>
@@ -51,19 +48,17 @@
       transition: background-color .2s ease, color .2s ease;
     }
 
-    /* JM watermark over the BF6 background */
     .jm-watermark{
       position:fixed;
       inset:0;
       background:
       url("https://raw.githubusercontent.com/jordanmoddes/jordanmoddes.github.io/main/assets/Signature_BlackTP.png")
       center/38% auto no-repeat;
-      opacity:0.5;             /* ~50% opacity */
+      opacity:0.5;
       pointer-events:none;
       z-index:0;
     }
 
-    /* Ensure actual content sits above watermark */
     .page-shell{
       position:relative;
       z-index:1;
@@ -141,16 +136,24 @@
     .nav .icon-btn:hover{ background: rgba(255,255,255,.12) }
     .rank-top{ color:var(--rank-top) }
     .rank-bottom{ color:var(--rank-bottom) }
+
+    /* ===== Rank icon in Player box ===== */
+    .rank-icon{
+      width:42px;
+      height:42px;
+      border-radius:12px;
+      border:1px solid var(--card-border);
+      background: rgba(255,255,255,.08);
+      object-fit: cover;
+      display:none;
+    }
   </style>
 </head>
 
 <body class="pb-12">
-  <!-- Watermark layer -->
   <div class="jm-watermark"></div>
 
-  <!-- Everything else sits above watermark -->
   <div class="page-shell">
-    <!-- Top Navigation -->
     <nav class="nav sticky top-0 z-50">
       <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
         <a href="https://jordanmoddes.com" target="_blank" rel="noopener" class="brand text-lg">JMOD</a>
@@ -173,10 +176,8 @@
       </p>
     </header>
 
-    <!-- Controls -->
     <form id="controls" class="max-w-6xl mx-auto grid grid-cols-1 gap-3 mb-6 px-4">
       <div class="card grid grid-cols-1 md:grid-cols-[1fr_auto_1fr_auto] gap-3">
-        <!-- Platform radios -->
         <div>
           <div class="text-xs" style="color:var(--sub);">Platform</div>
           <div class="flex flex-wrap items-center gap-4 mt-1">
@@ -199,12 +200,10 @@
           </div>
         </div>
 
-        <!-- LOAD button -->
         <div class="flex items-end justify-center">
           <button id="loadBtn" type="submit" class="btn">LOAD</button>
         </div>
 
-        <!-- Gamer tag -->
         <div>
           <div class="text-xs" style="color:var(--sub);">Gamer Tag</div>
           <input id="tag" class="w-full rounded-md px-3 py-3 text-slate-900"
@@ -212,7 +211,6 @@
                  placeholder="Enter gamer tag" />
         </div>
 
-        <!-- Last updated -->
         <div class="flex items-end justify-start md:justify-end">
           <div class="chip text-xs" style="color:var(--sub)">
             Last updated: <span id="updated">—</span>
@@ -229,14 +227,10 @@
   </div>
 
   <script>
-    // ===== set this to your Worker URL (must be HTTPS) =====
     const API_BASE = "https://jmodbattlefield.jmodwork.workers.dev";
-    // Hard-code game for now: Tracker Network Battlefield 2042
     const GAME = "battlefield-2042";
-    // =======================================================
     const REFRESH_MS = 60000;
 
-    // Theme (default dark)
     const themeBtn = document.getElementById("themeBtn");
     const savedTheme = localStorage.getItem("bf-theme");
     if (savedTheme === "light") {
@@ -250,7 +244,6 @@
       localStorage.setItem("bf-theme", light ? "light" : "dark");
     });
 
-    // Share
     document.getElementById("shareBtn").addEventListener("click", async () => {
       try {
         await navigator.clipboard.writeText(location.href);
@@ -262,7 +255,6 @@
       }
     });
 
-    // Snip (clipboard on supported; download fallback for iOS)
     document.getElementById("snipBtn").addEventListener("click", async () => {
       try {
         const canvas = await html2canvas(document.body, {
@@ -273,9 +265,7 @@
         });
         canvas.toBlob(async (blob) => {
           try {
-            await navigator.clipboard.write([
-              new ClipboardItem({ "image/png": blob })
-            ]);
+            await navigator.clipboard.write([ new ClipboardItem({ "image/png": blob }) ]);
             const b = document.getElementById("snipBtn");
             b.textContent = "Snipped!";
             setTimeout(() => (b.textContent = "Snip"), 1200);
@@ -293,7 +283,6 @@
       }
     });
 
-    // ----- Dashboard logic (fetch only on LOAD + 60s poll) -----
     const params = new URLSearchParams(location.search);
     const defaultTag = params.get("tag") || "notJMODsuspended";
     const defaultPlatform = params.get("platform") || "PS5";
@@ -318,21 +307,14 @@
       poll = setInterval(() => load(p, t), REFRESH_MS);
     }
     function stopPolling() {
-      if (poll) {
-        clearInterval(poll);
-        poll = null;
-      }
+      if (poll) { clearInterval(poll); poll = null; }
     }
 
     formEl.addEventListener("submit", (e) => {
       e.preventDefault();
       const platform = getPlatform();
       const tag = tagEl.value.trim() || "notJMODsuspended";
-      history.replaceState(
-        null,
-        "",
-        `?${new URLSearchParams({ platform, tag }).toString()}`
-      );
+      history.replaceState(null, "", `?${new URLSearchParams({ platform, tag }).toString()}`);
       load(platform, tag);
       startPolling(platform, tag);
     });
@@ -388,6 +370,14 @@
       const playerName = data.player?.name ?? tagEl.value;
       const platformLabel = data.player?.platform ?? getPlatform();
 
+      // Rank + icon (auto-detect common shapes)
+      const rank = (data.player?.rank ?? o.rank ?? data.rank ?? null);
+      const rankIconUrl =
+        (data.player?.rankIconUrl ?? o.rankIconUrl ?? data.rankIconUrl ??
+         data.player?.iconUrl ?? o.iconUrl ?? data.iconUrl ??
+         data.player?.emblemUrl ?? o.emblemUrl ?? data.emblemUrl ??
+         data.player?.imageUrl ?? o.imageUrl ?? data.imageUrl ?? null);
+
       const kills = o.kills ?? "—";
       const kd = o.kd ?? "—";
       const kpm = o.killsPerMinute ?? o.kpm ?? "—";
@@ -400,28 +390,32 @@
         winRate = ((wins / (wins + losses)) * 100).toFixed(1);
       }
       const winRateDisplay =
-        winRate == null
-          ? "—"
-          : String(winRate).includes("%")
-            ? String(winRate)
-            : `${winRate}%`;
+        winRate == null ? "—" : (String(winRate).includes("%") ? String(winRate) : `${winRate}%`);
 
-      // Prepare modes + total time for % played
       const modes = (data.modes || []).slice();
       let totalModeHours = 0;
-      modes.forEach(m => {
-        totalModeHours += Number(m.time) || 0;
-      });
+      modes.forEach(m => { totalModeHours += Number(m.time) || 0; });
       modes.sort((a,b) => (Number(b.time) || 0) - (Number(a.time) || 0));
 
+      const showRank = (rank != null && rank !== "—" && rank !== "");
+      const showIcon = !!rankIconUrl;
+
       contentEl.innerHTML = `
-        <!-- Player snapshot with centered PLAYER + name and 5 highlights -->
         <section class="card mb-4">
           <div class="flex flex-col items-center text-center mb-4">
             <div class="text-[0.65rem] uppercase tracking-[0.3em]" style="color:var(--sub);">Player</div>
-            <div class="text-2xl md:text-3xl font-extrabold">${playerName}</div>
-            <div class="text-xs mt-1" style="color:var(--sub);">${platformLabel}</div>
+
+            <div class="flex items-center gap-3 mt-1">
+              <img class="rank-icon" id="rankIconEl" alt="Rank" />
+              <div>
+                <div class="text-2xl md:text-3xl font-extrabold">${playerName}</div>
+                <div class="text-xs mt-1" style="color:var(--sub);">
+                  ${platformLabel}${showRank ? ` • Rank ${rank}` : ""}
+                </div>
+              </div>
+            </div>
           </div>
+
           <div class="grid grid-cols-2 md:grid-cols-5 gap-3">
             <div class="rounded-xl py-3 px-2 flex flex-col items-center justify-center text-center" style="background:var(--card-bg);border:1px solid var(--card-border);">
               <div class="text-[0.65rem] uppercase tracking-[0.16em] mb-1" style="color:var(--sub);">Kills</div>
@@ -447,7 +441,15 @@
         </section>
       `;
 
-      // Overview
+      // After HTML is in DOM, set icon safely
+      const iconEl = document.getElementById("rankIconEl");
+      if (iconEl && showIcon) {
+        iconEl.src = rankIconUrl;
+        iconEl.style.display = "block";
+      } else if (iconEl) {
+        iconEl.style.display = "none";
+      }
+
       contentEl.innerHTML += `
         <section class="card">
           <div class="title">Overview</div>
@@ -467,7 +469,6 @@
           </div>
         </section>`;
 
-      // Classes
       contentEl.innerHTML += `
         <section class="card">
           <div class="title">Classes</div>
@@ -482,7 +483,6 @@
           </div>
         </section>`;
 
-      // Modes (simplified view)
       contentEl.innerHTML += `
         <section class="card">
           <div class="title">Modes</div>
@@ -505,7 +505,6 @@
           </div>
         </section>`;
 
-      // Weapons
       contentEl.innerHTML += `
         <section class="card">
           <div class="title">Top Weapons</div>
@@ -520,7 +519,6 @@
           </div>
         </section>`;
 
-      // Gadgets (already after Top Weapons)
       contentEl.innerHTML += `
         <section class="card">
           <div class="title">Top Gadgets</div>
@@ -535,14 +533,12 @@
           </div>
         </section>`;
 
-      // Footer card (player summary)
       contentEl.innerHTML += `
         <section class="card text-center" style="color:var(--sub)">
           Player: <b>${playerName}</b>
           (${platformLabel}) • Hours: ${data.player?.hours ?? "—"}
         </section>`;
 
-      // JM image + label before raw JSON
       contentEl.innerHTML += `
         <section class="card text-center">
           <div class="flex flex-col items-center gap-3">
@@ -557,7 +553,6 @@
           </div>
         </section>`;
 
-      // Raw GameTools JSON (collapsible)
       contentEl.innerHTML += `
         <section class="card">
           <div class="title">Raw GameTools JSON</div>
@@ -570,51 +565,8 @@
         </section>`;
     }
 
-    // You can uncomment these to preload your own stats when the key works
     // load(getPlatform(), tagEl.value);
     // startPolling(getPlatform(), tagEl.value);
   </script>
-<div class="bf-rank">
-  <img id="rankIcon" alt="Rank icon" width="48" height="48" />
-  <div>
-    <div id="rankText"></div>
-    <div id="rankSub" style="opacity:.75;font-size:.9em;"></div>
-  </div>
-</div>
-
-<script>
-async function loadStats() {
-  const res = await fetch("/api/bf"); // <-- your endpoint
-  const data = await res.json();
-
-  // --- CHANGE THESE based on your API response ---
-  const rank = data.rank ?? data.level ?? data.playerLevel ?? null;
-  const iconUrl =
-    data.rankIconUrl ?? data.iconUrl ?? data.emblemUrl ?? data.imageUrl ?? null;
-  const xp = data.xp ?? data.experience ?? null;
-
-  // If rank missing but xp exists, derive rank (you must define thresholds)
-  const derivedRank = (rank ?? (xp != null ? xpToRank(xp) : null));
-
-  document.getElementById("rankText").textContent =
-    derivedRank != null ? `Rank ${derivedRank}` : "Rank unavailable";
-
-  // Prefer API icon; fallback to local icons
-  const finalIcon =
-    iconUrl ?? (derivedRank != null ? `/assets/ranks/${derivedRank}.png` : `/assets/ranks/unknown.png`);
-
-  document.getElementById("rankIcon").src = finalIcon;
-  document.getElementById("rankSub").textContent =
-    xp != null ? `XP: ${Number(xp).toLocaleString()}` : "";
-}
-
-// Example stub: replace with real XP thresholds for your Battlefield title
-function xpToRank(xp) {
-  // TODO: implement your actual progression table
-  return Math.max(1, Math.floor(xp / 100000) + 1);
-}
-
-loadStats();
-</script>
 </body>
 </html>
