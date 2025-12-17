@@ -574,5 +574,47 @@
     // load(getPlatform(), tagEl.value);
     // startPolling(getPlatform(), tagEl.value);
   </script>
+<div class="bf-rank">
+  <img id="rankIcon" alt="Rank icon" width="48" height="48" />
+  <div>
+    <div id="rankText"></div>
+    <div id="rankSub" style="opacity:.75;font-size:.9em;"></div>
+  </div>
+</div>
+
+<script>
+async function loadStats() {
+  const res = await fetch("/api/bf"); // <-- your endpoint
+  const data = await res.json();
+
+  // --- CHANGE THESE based on your API response ---
+  const rank = data.rank ?? data.level ?? data.playerLevel ?? null;
+  const iconUrl =
+    data.rankIconUrl ?? data.iconUrl ?? data.emblemUrl ?? data.imageUrl ?? null;
+  const xp = data.xp ?? data.experience ?? null;
+
+  // If rank missing but xp exists, derive rank (you must define thresholds)
+  const derivedRank = (rank ?? (xp != null ? xpToRank(xp) : null));
+
+  document.getElementById("rankText").textContent =
+    derivedRank != null ? `Rank ${derivedRank}` : "Rank unavailable";
+
+  // Prefer API icon; fallback to local icons
+  const finalIcon =
+    iconUrl ?? (derivedRank != null ? `/assets/ranks/${derivedRank}.png` : `/assets/ranks/unknown.png`);
+
+  document.getElementById("rankIcon").src = finalIcon;
+  document.getElementById("rankSub").textContent =
+    xp != null ? `XP: ${Number(xp).toLocaleString()}` : "";
+}
+
+// Example stub: replace with real XP thresholds for your Battlefield title
+function xpToRank(xp) {
+  // TODO: implement your actual progression table
+  return Math.max(1, Math.floor(xp / 100000) + 1);
+}
+
+loadStats();
+</script>
 </body>
 </html>
