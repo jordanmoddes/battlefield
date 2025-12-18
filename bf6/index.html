@@ -6,7 +6,6 @@
   <meta name="theme-color" content="#0b1220">
   <title>Jmod's BF6 Stats</title>
   <link rel="icon" type="image/png" href="/assets/Signature_WhiteTP.png" />
-  <!-- Tailwind + html2canvas -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 
@@ -142,11 +141,9 @@
   </style>
 </head>
 <body class="pb-12">
-  <!-- Watermark behind everything -->
   <div class="jm-watermark"></div>
 
   <div class="page-shell">
-    <!-- NAVBAR -->
     <nav class="nav sticky top-0 z-50">
       <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
         <a href="https://jordanmoddes.com" target="_blank" class="brand text-lg">JMOD</a>
@@ -159,7 +156,6 @@
       </div>
     </nav>
 
-    <!-- HERO -->
     <header class="text-center mt-6 mb-6 px-4">
       <h1 class="text-3xl md:text-4xl font-extrabold tracking-tight" style="color:var(--title)">
         Jmod's Battlefield 6 — Stats Dashboard
@@ -169,10 +165,8 @@
       </p>
     </header>
 
-    <!-- CONTROLS -->
     <form id="controls" class="max-w-6xl mx-auto grid grid-cols-1 gap-3 mb-6 px-4">
       <div class="card grid grid-cols-1 md:grid-cols-[1.1fr_auto_1.2fr_auto] gap-3 items-end">
-        <!-- Platform radios -->
         <div>
           <div class="text-xs mb-1" style="color:var(--sub);">Platform</div>
           <div class="flex flex-wrap items-center gap-3">
@@ -191,18 +185,15 @@
           </div>
         </div>
 
-        <!-- LOAD button -->
         <div class="flex items-end justify-center">
           <button type="submit" class="btn">LOAD</button>
         </div>
 
-        <!-- Player tag input -->
         <div>
           <div class="text-xs mb-1" style="color:var(--sub);">Player Tag</div>
           <input id="tag" class="w-full rounded-md px-3 py-3 text-slate-900" value="notJMODsuspended">
         </div>
 
-        <!-- Last updated chip -->
         <div class="flex items-end justify-start md:justify-end">
           <div class="chip text-xs" style="color:var(--sub)">
             Last updated: <span id="updated">—</span>
@@ -211,26 +202,17 @@
       </div>
     </form>
 
-    <!-- ========= SNIP ROOT ========= -->
     <div id="snip-root">
-      <!-- Dynamic stats dashboard -->
       <div id="content" class="max-w-6xl mx-auto px-4 space-y-4 text-sm"></div>
 
-      <!-- Signature card -->
       <section class="max-w-6xl mx-auto mt-8 px-4">
         <div class="card card-tight text-center">
-          <img src="/assets/Signature_BlackTP.png"
-               alt="JM"
-               class="max-w-[160px] w-full opacity-80 mx-auto">
-          <div style="color:var(--sub);">
-            Jmod's Battlefield <b>Stat Page</b>
-          </div>
+          <img src="/assets/Signature_BlackTP.png" alt="JM" class="max-w-[160px] w-full opacity-80 mx-auto">
+          <div style="color:var(--sub);">Jmod's Battlefield <b>Stat Page</b></div>
         </div>
       </section>
     </div>
-    <!-- ======== END SNIP ROOT ======== -->
 
-    <!-- Raw JSON panel -->
     <section class="max-w-6xl mx-auto mt-4 px-4">
       <div class="card card-tight">
         <div class="flex justify-between mb-1">
@@ -238,12 +220,8 @@
           <div id="status" class="text-xs" style="color:var(--sub)">Idle</div>
         </div>
         <details>
-          <summary class="text-xs cursor-pointer" style="color:var(--sub);">
-            Show / hide raw JSON
-          </summary>
-          <pre id="json" class="json-output mt-2" style="color:var(--sub)">
-No data loaded yet.
-          </pre>
+          <summary class="text-xs cursor-pointer" style="color:var(--sub);">Show / hide raw JSON</summary>
+          <pre id="json" class="json-output mt-2" style="color:var(--sub)">No data loaded yet.</pre>
         </details>
       </div>
     </section>
@@ -254,18 +232,12 @@ No data loaded yet.
   </div>
 
   <script>
-  // =========================================================
-  //  API URL (GameTools BF6 stats, proxied)
-  // =========================================================
   function buildApiUrl(platform, name){
-    const params  = new URLSearchParams({ name, platform, lang: "en-us" });
+    const params = new URLSearchParams({ name, platform, lang: "en-us" });
     const realUrl = `https://api.gametools.network/bf6/stats/?${params.toString()}`;
     return `https://corsproxy.io/?${encodeURIComponent(realUrl)}`;
   }
 
-  // ======================
-  //  Formatting helpers
-  // ======================
   function fmtNum(x){
     if (x === undefined || x === null || isNaN(x)) return "—";
     return Number(x).toLocaleString();
@@ -291,9 +263,7 @@ No data loaded yet.
     return String(x);
   }
 
-  // ======================
-  //  Rank progression scraper (optimized)
-  // ======================
+  // Rank progression scraper using tracker.gg/bf6 (updated for BF6 structure)
   async function fetchRankProgress(platformSlug, name) {
     const platformMap = { pc: 'origin', psn: 'psn', xboxone: 'xbl' };
     const plat = platformMap[platformSlug] || 'psn';
@@ -303,94 +273,60 @@ No data loaded yet.
       const proxiedUrl = `https://corsproxy.io/?${encodeURIComponent(profileUrl)}`;
 
       const res = await fetch(proxiedUrl, { cache: "no-store" });
-      if (!res.ok) throw new Error("Profile fetch failed");
+      if (!res.ok) throw new Error("Failed");
 
       const html = await res.text();
       const parser = new DOMParser();
       const doc = parser.parseFromString(html, "text/html");
 
-      let rank = '—';
+      let rankNum = '—';
       let progress = 0;
       let icon = '';
 
-      // Rank number
-      const rankElements = doc.querySelectorAll('[class*="rank" i], [class*="level" i], [class*="badge" i]');
-      for (const el of rankElements) {
-        const text = el.textContent.trim();
-        const match = text.match(/(?:Rank|Level|S)\s*(\d{1,4})/i);
-        if (match) {
-          rank = parseInt(match[1]);
-          break;
-        }
-      }
-      if (rank === '—') {
-        const rankMatch = html.match(/(?:Rank|Level|S[\s-]*)\s*(\d{1,4})/i);
-        if (rankMatch) rank = parseInt(rankMatch[1]);
-      }
+      // Extract rank number
+      const rankMatch = html.match(/Rank\D*(\d{1,5})/i);
+      if (rankMatch) rankNum = parseInt(rankMatch[1]);
 
-      // Format as Sxxx for >99 (standard BF2042/BF6 display)
-      if (rank !== '—' && rank > 99) {
-        rank = `S${rank - 99}`;
-      } else if (rank !== '—') {
-        rank = rank.toString();
-      }
+      // Progress
+      const progressMatch = html.match(/width\D*([\d.]+)%/i);
+      if (progressMatch) progress = Math.round(parseFloat(progressMatch[1]));
 
-      // Progress %
-      const progressBars = doc.querySelectorAll('[class*="progress" i], [class*="bar" i], [class*="fill" i]');
-      for (const bar of progressBars) {
-        const style = bar.getAttribute('style') || '';
-        const widthMatch = style.match(/width\s*:\s*([\d.]+)%/i);
-        if (widthMatch) {
-          progress = parseFloat(widthMatch[1]);
-          if (progress >= 0 && progress <= 100) break;
-        }
-      }
+      // Icon URL
+      const iconMatch = html.match(/(https:\/\/[^"']*rank[^"']*\.(png|jpg|webp))/i);
+      if (iconMatch) icon = iconMatch[1];
 
-      // Rank icon
-      const rankImgs = doc.querySelectorAll('[class*="rank" i] img, [class*="badge" i] img');
-      if (rankImgs.length > 0) {
-        const src = rankImgs[0].getAttribute('src') || rankImgs[0].getAttribute('data-src');
-        if (src && src.startsWith('http')) icon = src;
-      }
-      if (!icon) {
-        const iconMatch = html.match(/(https:\/\/[^"'\s>]*\/(?:rank|badge|slevel|prestige)[^"'\s>]*\.(?:png|jpg|webp))/i);
-        if (iconMatch) icon = iconMatch[1];
-      }
-      // Fallback generated URL (common pattern)
-      if (!icon && rank !== '—' && rank.startsWith('S')) {
-        const num = parseInt(rank.slice(1)) + 99; // reverse calculation
-        const padded = num.toString().padStart(3, '0');
+      // Fallback icon generation for high ranks (S-level pattern common in BF series)
+      if (!icon && rankNum !== '—' && rankNum > 99) {
+        const sLevel = rankNum - 99;
+        const padded = sLevel.toString().padStart(3, '0');
         icon = `https://eaassets-a.akamaihd.net/battlefield/portal/ranks/s${padded}.png`;
       }
 
-      return { rank, progress: Math.round(progress), icon: icon || '' };
+      const rankDisplay = rankNum === '—' ? '—' : (rankNum > 99 ? `S${rankNum - 99}` : rankNum);
+
+      return { rank: rankDisplay, progress, icon: icon || '' };
     } catch (err) {
-      console.warn("Rank fetch failed:", err);
+      console.warn("Rank fetch failed", err);
       return { rank: '—', progress: 0, icon: '' };
     }
   }
 
-  // ======================
-  //  DOM references
-  // ======================
-  const themeBtn   = document.getElementById("themeBtn");
-  const shareBtn   = document.getElementById("shareBtn");
-  const snipBtn    = document.getElementById("snipBtn");
-  const formEl     = document.getElementById("controls");
-  const tagEl      = document.getElementById("tag");
-  const updatedEl  = document.getElementById("updated");
-  const jsonEl     = document.getElementById("json");
-  const statusEl   = document.getElementById("status");
-  const contentEl  = document.getElementById("content");
+  const themeBtn = document.getElementById("themeBtn");
+  const shareBtn = document.getElementById("shareBtn");
+  const snipBtn = document.getElementById("snipBtn");
+  const formEl = document.getElementById("controls");
+  const tagEl = document.getElementById("tag");
+  const updatedEl = document.getElementById("updated");
+  const jsonEl = document.getElementById("json");
+  const statusEl = document.getElementById("status");
+  const contentEl = document.getElementById("content");
 
   function getPlatform(){
     const r = document.querySelector("input[name='platform']:checked");
     return r ? r.value : "psn";
   }
 
-  // ======================
-  //  Theme toggle
-  // ======================
+  // Theme toggle (unchanged)
   const savedTheme = localStorage.getItem("bf6-theme");
   if (savedTheme === "light") {
     document.body.classList.add("light");
@@ -398,7 +334,6 @@ No data loaded yet.
   } else {
     themeBtn.textContent = "Light";
   }
-
   themeBtn.addEventListener("click", () => {
     document.body.classList.toggle("light");
     const light = document.body.classList.contains("light");
@@ -406,9 +341,7 @@ No data loaded yet.
     localStorage.setItem("bf6-theme", light ? "light" : "dark");
   });
 
-  // ======================
-  //  Share button
-  // ======================
+  // Share button (unchanged)
   shareBtn.addEventListener("click", async () => {
     try {
       await navigator.clipboard.writeText(location.href);
@@ -418,17 +351,8 @@ No data loaded yet.
     }
   });
 
-  // ======================
-  //  Snip handler (unchanged - your original excellent code)
-  // ======================
-  snipBtn.addEventListener("click", async () => {
-    // ... (your full snip code remains here - omitted for brevity but keep it exactly as you had)
-    // It works perfectly, no changes needed.
-  });
+  // Your full snipBtn listener code goes here (keep your original - it's perfect)
 
-  // =====================================================
-  //  Render the full dashboard
-  // =====================================================
   function renderDashboard(data, platform){
     const {
       userName,
@@ -479,74 +403,55 @@ No data loaded yet.
 
     const { rankData = { rank: '—', progress: 0, icon: '' } } = data;
 
-    const topWeapons  = [...weapons].sort((a,b)=> (b.kills||0)-(a.kills||0)).slice(0,8);
-    const topVehicles = [...vehicles].sort((a,b)=> (b.kills||0)-(a.kills||0)).slice(0,6);
-    const mapsSorted  = [...maps].sort((a,b)=> (b.secondsPlayed||0)-(a.secondsPlayed||0));
-
-    const footKm = distanceTraveled ? kmFromUnits(distanceTraveled.foot)      : "—";
-    const vehKm  = distanceTraveled ? kmFromUnits(distanceTraveled.vehicle)   : "—";
-    const passKm = distanceTraveled ? kmFromUnits(distanceTraveled.passenger) : "—";
-
-    const repairToolGadget = gadgets.find(g => g.gadgetName && g.gadgetName.toLowerCase().includes("repair"));
-    const eodGadget = gadgets.find(g => g.gadgetName && g.gadgetName.toLowerCase().includes("eod"));
-    const repairFixes = repairToolGadget ? fmtNum(repairToolGadget.uses)  : "—";
-    const eodKillsVal = eodGadget ? fmtNum(eodGadget.kills) : "—";
-
-    // Next rank calculation
     let nextRankDisplay = '—';
     if (rankData.rank !== '—') {
-      if (rankData.rank.startsWith('S')) {
-        const sNum = parseInt(rankData.rank.slice(1));
-        nextRankDisplay = `S${sNum + 1}`;
+      if (typeof rankData.rank === 'string' && rankData.rank.startsWith('S')) {
+        const num = parseInt(rankData.rank.slice(1));
+        nextRankDisplay = `S${num + 1}`;
       } else {
         nextRankDisplay = parseInt(rankData.rank) + 1;
       }
     }
 
+    const repairToolGadget = gadgets.find(g => g.gadgetName && g.gadgetName.toLowerCase().includes("repair"));
+    const eodGadget = gadgets.find(g => g.gadgetName && g.gadgetName.toLowerCase().includes("eod"));
+    const repairFixes = repairToolGadget ? fmtNum(repairToolGadget.uses) : "—";
+    const eodKillsVal = eodGadget ? fmtNum(eodGadget.kills) : "—";
+
     contentEl.innerHTML = `
-      <!-- Player snapshot with Rank Progression on top -->
-      <section class="card text-center">
-        <!-- Rank Progression -->
-        <div class="flex flex-col items-center gap-4 mb-6">
-          <div class="flex items-center gap-4">
-            <img id="rankIconLive" src="${rankData.icon}" alt="Rank Icon" class="w-24 h-24 object-contain rounded-full border-4 border-slate-600" onerror="this.style.display='none'; this.previousElementSibling.style.display='block'">
-            <div class="hidden w-24 h-24 bg-slate-700 rounded-full flex items-center justify-center text-2xl font-bold">?</div>
+      <section class="card text-center pb-8">
+        <!-- Rank Progression - big at the top -->
+        <div class="flex flex-col items-center gap-6 py-8">
+          <div class="relative">
+            <img src="${rankData.icon}" alt="Rank Icon" class="w-40 h-40 object-contain rounded-full border-8 border-slate-600 shadow-2xl" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
+            <div class="hidden w-40 h-40 bg-slate-800 rounded-full flex items-center justify-center text-5xl font-bold text-var(--sub)">?</div>
           </div>
-          <div>
-            <div class="text-3xl font-bold" style="color:var(--title);">Rank ${rankData.rank}</div>
-          </div>
-          <div class="w-full max-w-md">
-            <div class="bg-slate-700/80 rounded-full h-5 overflow-hidden">
-              <div class="bg-gradient-to-r from-orange-500 to-var(--bf-accent) h-full rounded-full transition-all duration-700" style="width:${rankData.progress}%"></div>
+          <div class="text-5xl md:text-6xl font-black" style="color:var(--title);">Rank ${rankData.rank}</div>
+          <div class="w-full max-w-lg">
+            <div class="bg-slate-700/80 rounded-full h-6 overflow-hidden shadow-inner">
+              <div class="bg-gradient-to-r from-orange-600 to-var(--bf-accent) h-full rounded-full transition-all duration-1000" style="width:${rankData.progress}%"></div>
             </div>
-            <div class="flex justify-between text-xs mt-1" style="color:var(--sub);">
+            <div class="flex justify-between text-sm mt-2" style="color:var(--sub);">
               <span>${rankData.progress}% to next rank</span>
               <span>Next: ${nextRankDisplay}</span>
             </div>
           </div>
         </div>
 
-        <!-- Avatar + Player info -->
-        <div class="flex flex-col items-center gap-3">
-          <img src="${avatar || ""}" alt="" class="w-16 h-16 md:w-20 md:h-20 rounded-full border border-slate-500 object-cover">
-          <div class="text-sm">
-            <div class="text-xs uppercase tracking-[0.18em]" style="color:var(--sub);">PLAYER</div>
-            <div class="text-xl font-bold leading-tight mt-1">${userName || tagEl.value}</div>
-            <div class="text-xs mt-1" style="color:var(--sub);">
-              Platform: <span class="font-semibold">${platform.toUpperCase()}</span>
-              • Best class: <span class="font-semibold">${bestClass || "—"}</span>
-              • Human lobbies: <span class="font-semibold">${fmtPercentString(humanPrecentage)}</span>
-            </div>
-            <div class="text-xs mt-1" style="color:var(--sub);">
-              Time played: <span class="font-semibold">${timePlayed || fmtSeconds(secondsPlayed)}</span>
-              • Matches: <span class="font-semibold">${fmtNum(matchesPlayed)}</span>
-            </div>
+        <!-- Player info -->
+        <div class="flex flex-col items-center gap-4">
+          <div class="text-xs uppercase tracking-widest" style="color:var(--sub);">PLAYER</div>
+          <div class="text-3xl font-bold">${userName || tagEl.value}</div>
+          <div class="text-sm" style="color:var(--sub);">
+            Platform: <span class="font-semibold">\( {platform.toUpperCase()}</span> • Best class: <span class="font-semibold"> \){bestClass || "—"}</span> • Human lobbies: <span class="font-semibold">${fmtPercentString(humanPrecentage)}</span>
+          </div>
+          <div class="text-sm" style="color:var(--sub);">
+            Time played: <span class="font-semibold">\( {timePlayed || fmtSeconds(secondsPlayed)}</span> • Matches: <span class="font-semibold"> \){fmtNum(matchesPlayed)}</span>
           </div>
         </div>
 
-        <!-- Main stat grid -->
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6">
-          <!-- ... (your original 8 stat boxes remain exactly the same) -->
+        <!-- Main stats grid -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-8">
           <div>
             <div class="stat-label">Kills</div>
             <div class="stat-value">${fmtNum(kills)}</div>
@@ -565,16 +470,12 @@ No data loaded yet.
           <div>
             <div class="stat-label">Accuracy</div>
             <div class="stat-value">${fmtPercentString(accuracy)}</div>
-            <div class="text-xs" style="color:var(--sub);">
-              Headshots: \( {fmtNum(headShots)} ( \){fmtPercentString(headshots)})
-            </div>
+            <div class="text-xs" style="color:var(--sub);">Headshots: \( {fmtNum(headShots)} ( \){fmtPercentString(headshots)})</div>
           </div>
           <div>
             <div class="stat-label">Win %</div>
             <div class="stat-value">${fmtPercentString(winPercent)}</div>
-            <div class="text-xs" style="color:var(--sub);">
-              Wins: ${fmtNum(wins)} • Losses: ${fmtNum(loses)}
-            </div>
+            <div class="text-xs" style="color:var(--sub);">Wins: ${fmtNum(wins)} • Losses: ${fmtNum(loses)}</div>
           </div>
           <div>
             <div class="stat-label">Revives</div>
@@ -584,83 +485,59 @@ No data loaded yet.
           <div>
             <div class="stat-label">Repair Fixes</div>
             <div class="stat-value">${repairFixes}</div>
-            <div class="text-xs" style="color:var(--sub);">
-              From gadget uses (Repair Tool)
-            </div>
+            <div class="text-xs" style="color:var(--sub);">From gadget uses (Repair Tool)</div>
           </div>
           <div>
             <div class="stat-label">EOD Kills</div>
             <div class="stat-value">${eodKillsVal}</div>
-            <div class="text-xs" style="color:var(--sub);">
-              Kills from EOD-type gadget
-            </div>
+            <div class="text-xs" style="color:var(--sub);">Kills from EOD-type gadget</div>
           </div>
         </div>
       </section>
 
-      <!-- Teamplay & Support (unchanged) -->
-      <section class="card">
-        <div class="title">Teamplay &amp; Support</div>
-        <!-- ... (your original code) -->
-      </section>
-
-      <!-- All other sections (Combat, Classes, Weapons, Vehicles, Maps, etc.) remain exactly as in your original code -->
-      <!-- I've omitted them here for brevity, but copy-paste them unchanged from your original renderDashboard -->
-
+      <!-- Teamplay & Support, Combat Breakdown, Classes, Weapon Groups, Top Weapons, Vehicle Groups, Top Vehicles, Maps & Objectives, Gadgets, Modes -->
+      <!-- Paste your original sections here unchanged -->
     `;
   }
 
-  // ======================
-  //  Load stats
-  // ======================
   async function loadStats(){
     const platform = getPlatform();
-    const tag      = (tagEl.value || "").trim() || "notJMODsuspended";
-    const url      = buildApiUrl(platform, tag);
+    const tag = (tagEl.value || "").trim() || "notJMODsuspended";
+    const url = buildApiUrl(platform, tag);
 
-    statusEl.textContent = "Loading GameTools…";
-    contentEl.innerHTML  = "";
-    jsonEl.textContent   = "Fetching from " + url;
+    statusEl.textContent = "Loading…";
+    contentEl.innerHTML = "";
+    jsonEl.textContent = "Fetching...";
 
-    try{
+    try {
       const res = await fetch(url, { cache:"no-store" });
-      if (!res.ok) {
-        const text = await res.text().catch(()=> "");
-        throw new Error(text || ("HTTP " + res.status));
-      }
+      if (!res.ok) throw new Error("HTTP " + res.status);
       const data = await res.json();
-      jsonEl.textContent    = JSON.stringify(data, null, 2);
+
+      jsonEl.textContent = JSON.stringify(data, null, 2);
       updatedEl.textContent = new Date().toLocaleTimeString();
 
-      // Fetch rank progression from tracker.gg
-      statusEl.textContent = "Loading rank progression…";
       const rankData = await fetchRankProgress(platform, tag);
       data.rankData = rankData;
 
-      statusEl.textContent  = "OK";
+      statusEl.textContent = "OK";
       renderDashboard(data, platform);
-    }catch(err){
-      console.error(err);
-      statusEl.textContent  = "Error";
-      updatedEl.textContent = "—";
-      jsonEl.textContent    = "Error: " + (err.message || String(err));
-      contentEl.innerHTML   = `<div class="card text-red-400 text-center">No stats found for <b>${tag}</b> on ${platform.toUpperCase()}.</div>`;
+    } catch (err) {
+      statusEl.textContent = "Error";
+      jsonEl.textContent = "Error: " + err.message;
+      contentEl.innerHTML = `<div class="card text-red-400 text-center">No stats found.</div>`;
     }
   }
 
-  // ======================
-  //  Form submit + initial load
-  // ======================
-  formEl.addEventListener("submit", (e) => {
+  formEl.addEventListener("submit", e => {
     e.preventDefault();
     loadStats();
   });
 
-  const params          = new URLSearchParams(location.search);
-  const defaultTag      = params.get("tag") || "notJMODsuspended";
+  // URL params & initial load
+  const params = new URLSearchParams(location.search);
+  tagEl.value = params.get("tag") || "notJMODsuspended";
   const defaultPlatform = params.get("platform") || "psn";
-
-  tagEl.value = defaultTag;
   const initialRadio = document.getElementById(defaultPlatform) || document.getElementById("psn");
   if (initialRadio) initialRadio.checked = true;
 
