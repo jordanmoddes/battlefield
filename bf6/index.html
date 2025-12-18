@@ -1,914 +1,930 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="theme-color" content="#0b1220">
-  <title>Jmod's BF6 Stats</title>
-  <link rel="icon" type="image/png" href="/assets/Signature_WhiteTP.png" />
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
-
-  <style>
-    :root{
-      --bf-accent:#ff6a00;
-      --bg-overlay:rgba(10,18,32,.90);
-      --card-bg:rgba(255,255,255,.11);
-      --card-border:rgba(255,255,255,.18);
-      --text:#f8fafc;
-      --sub:#e5e7eb;
-      --title:#93c5fd;
-      --nav-bg1:rgba(7,11,20,.75);
-      --nav-bg2:rgba(7,11,20,.35);
-    }
-    body.light{
-      --bg-overlay:rgba(255,255,255,.60);
-      --card-bg:rgba(0,0,0,.04);
-      --card-border:rgba(15,23,42,.20);
-      --text:#0b1220;
-      --sub:#374151;
-      --title:#1d4ed8;
-      --nav-bg1:rgba(255,255,255,.9);
-      --nav-bg2:rgba(255,255,255,.6);
-    }
-    body{
-      position:relative;
-      min-height:100vh;
-      color:var(--text);
-      background:
-        linear-gradient(180deg,var(--bg-overlay),var(--bg-overlay)),
-        url("https://assetsio.gnwcdn.com/battlefield-6-2.jpg?width=690&quality=85&format=jpg&dpr=3&auto=webp")
-          center/cover no-repeat fixed;
-      font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,"Helvetica Neue",Arial,"Noto Sans";
-      transition:all .2s;
-    }
-    .jm-watermark{
-      position:fixed;
-      inset:0;
-      background:url("/assets/Signature_BlackTP.png") center/38% auto no-repeat;
-      opacity:0.5;
-      pointer-events:none;
-      z-index:0;
-    }
-    .page-shell{ position:relative; z-index:1; }
-
-    .card{
-      background:var(--card-bg);
-      border:1px solid var(--card-border);
-      border-radius:16px;
-      padding:16px;
-    }
-    .card-tight{ padding:12px 14px; }
-
-    .grid-auto{
-      display:grid;
-      grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
-      gap:10px;
-    }
-    .title{
-      color:var(--title);
-      font-weight:900;
-      font-size:1.05rem;
-      margin-bottom:.5rem;
-      letter-spacing:.03em;
-    }
-
-    .nav{
-      backdrop-filter:blur(6px);
-      background:linear-gradient(180deg,var(--nav-bg1),var(--nav-bg2));
-      border-bottom:1px solid var(--card-border);
-    }
-    .nav .brand{ font-weight:900; letter-spacing:.06em; }
-    .nav .icon-btn{
-      background:var(--card-bg);
-      border:1px solid var(--card-border);
-      padding:.55rem .9rem;
-      border-radius:.7rem;
-      font-weight:700;
-      color:var(--text);
-      font-size:.8rem;
-      cursor:pointer;
-    }
-
-    .chip{
-      background:var(--card-bg);
-      border:1px solid var(--card-border);
-      padding:.4rem .7rem;
-      border-radius:.7rem;
-      font-size:.8rem;
-    }
-    .btn{
-      background:var(--bf-accent);
-      color:#0b0f1a;
-      font-weight:800;
-      padding:.7rem 1.4rem;
-      border-radius:9999px;
-      min-width:9rem;
-      cursor:pointer;
-      border:none;
-    }
-    .radio{
-      appearance:none;
-      width:22px;
-      height:22px;
-      border:2px solid var(--title);
-      border-radius:9999px;
-      position:relative;
-      cursor:pointer;
-    }
-    .radio:checked::after{
-      content:"";
-      position:absolute;
-      inset:4px;
-      border-radius:9999px;
-      background:var(--title);
-    }
-
-    .stat-label{
-      font-size:.7rem;
-      text-transform:uppercase;
-      letter-spacing:.08em;
-      color:var(--sub);
-    }
-    .stat-value{
-      font-weight:600;
-      font-size:1rem;
-    }
-
-    .json-output{
-      font-family:ui-monospace;
-      font-size:.78rem;
-      white-space:pre-wrap;
-      max-height:420px;
-      overflow:auto;
-    }
-
-    .rank-display{
-      position:relative;
-      display:flex;
-      flex-direction:column;
-      align-items:center;
-      gap:0.5rem;
-    }
-    .rank-icon{
-      width:120px;
-      height:120px;
-      object-fit:contain;
-      filter:drop-shadow(0 4px 12px rgba(255,106,0,0.3));
-    }
-    .rank-badge{
-      background:linear-gradient(135deg, var(--bf-accent), #ff8c00);
-      color:#0b0f1a;
-      font-weight:900;
-      padding:0.4rem 1rem;
-      border-radius:9999px;
-      font-size:0.9rem;
-      letter-spacing:0.05em;
-      box-shadow:0 2px 8px rgba(255,106,0,0.4);
-    }
-  </style>
-</head>
-<body class="pb-12">
-  <div class="jm-watermark"></div>
-
-  <div class="page-shell">
-    <nav class="nav sticky top-0 z-50">
-      <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
-        <a href="https://jordanmoddes.com" target="_blank" class="brand text-lg">JMOD</a>
-        <div class="flex items-center gap-2">
-          <a class="icon-btn" href="https://gametools.network/stats" target="_blank">GameTools</a>
-          <button id="shareBtn" class="icon-btn">Share</button>
-          <button id="snipBtn" class="icon-btn">Snip</button>
-          <button id="themeBtn" class="icon-btn">Light</button>
-        </div>
-      </div>
-    </nav>
-
-    <header class="text-center mt-6 mb-6 px-4">
-      <h1 class="text-3xl md:text-4xl font-extrabold tracking-tight" style="color:var(--title)">
-        Jmod's Battlefield 6 — Stats Dashboard
-      </h1>
-      <p class="text-sm" style="color:var(--sub)">
-        Powered by api.gametools.network/bf6 • Real-time, full detail
-      </p>
-    </header>
-
-    <form id="controls" class="max-w-6xl mx-auto grid grid-cols-1 gap-3 mb-6 px-4">
-      <div class="card grid grid-cols-1 md:grid-cols-[1.1fr_auto_1.2fr_auto] gap-3 items-end">
-        <div>
-          <div class="text-xs mb-1" style="color:var(--sub);">Platform</div>
-          <div class="flex flex-wrap items-center gap-3">
-            <label class="flex items-center gap-2 cursor-pointer chip">
-              <input class="radio" type="radio" name="platform" value="pc" id="pc">
-              <span class="font-semibold">PC</span>
-            </label>
-            <label class="flex items-center gap-2 cursor-pointer chip">
-              <input class="radio" type="radio" name="platform" value="psn" id="psn" checked>
-              <span class="font-semibold">PlayStation</span>
-            </label>
-            <label class="flex items-center gap-2 cursor-pointer chip">
-              <input class="radio" type="radio" name="platform" value="xboxone" id="xboxone">
-              <span class="font-semibold">Xbox</span>
-            </label>
-          </div>
-        </div>
-
-        <div class="flex items-end justify-center">
-          <button type="submit" class="btn">LOAD</button>
-        </div>
-
-        <div>
-          <div class="text-xs mb-1" style="color:var(--sub);">Player Tag</div>
-          <input id="tag" class="w-full rounded-md px-3 py-3 text-slate-900" value="notJMODsuspended">
-        </div>
-
-        <div class="flex items-end justify-start md:justify-end">
-          <div class="chip text-xs" style="color:var(--sub)">
-            Last updated: <span id="updated">—</span>
-          </div>
-        </div>
-      </div>
-    </form>
-
-    <div id="snip-root">
-      <div id="content" class="max-w-6xl mx-auto px-4 space-y-4 text-sm"></div>
-
-      <section class="max-w-6xl mx-auto mt-8 px-4">
-        <div class="card card-tight text-center">
-          <img src="/assets/Signature_BlackTP.png"
-               alt="JM"
-               class="max-w-[160px] w-full opacity-80 mx-auto">
-          <div style="color:var(--sub);">
-            Jmod's Battlefield <b>Stat Page</b>
-          </div>
-        </div>
-      </section>
-    </div>
-
-    <section class="max-w-6xl mx-auto mt-4 px-4">
-      <div class="card card-tight">
-        <div class="flex justify-between mb-1">
-          <div class="font-semibold" style="color:var(--title)">Raw GameTools JSON</div>
-          <div id="status" class="text-xs" style="color:var(--sub)">Idle</div>
-        </div>
-        <details>
-          <summary class="text-xs cursor-pointer" style="color:var(--sub);">
-            Show / hide raw JSON
-          </summary>
-          <pre id="json" class="json-output mt-2" style="color:var(--sub)">No data loaded yet.</pre>
-        </details>
-      </div>
-    </section>
-
-    <footer class="text-center text-xs mt-8 px-4" style="color:var(--sub)">
-      Powered by GameTools BF6 API • Built &amp; styled by Jmod
-    </footer>
-  </div>
-
-  <script>
-  function buildApiUrl(platform, name){
-    const params  = new URLSearchParams({ name, platform, lang: "en-us" });
-    const realUrl = `https://api.gametools.network/bf6/stats/?${params.toString()}`;
-    return `https://corsproxy.io/?${encodeURIComponent(realUrl)}`;
-  }
-
-  function fmtNum(x){
-    if (x === undefined || x === null || isNaN(x)) return "—";
-    return Number(x).toLocaleString();
-  }
-  function fmtFloat(x, digits = 2){
-    if (x === undefined || x === null || isNaN(x)) return "—";
-    return Number(x).toFixed(digits);
-  }
-  function fmtSeconds(sec){
-    if (!sec && sec !== 0) return "—";
-    const s = Number(sec);
-    const h = Math.floor(s / 3600);
-    const m = Math.floor((s % 3600) / 60);
-    if (h === 0 && m === 0) return s + "s";
-    return h ? `${h}h ${m}m` : `${m}m`;
-  }
-  function kmFromUnits(x){
-    if (!x && x !== 0) return "—";
-    return (Number(x) / 1000).toFixed(1) + " km";
-  }
-  function fmtPercentString(x){
-    if (x == null) return "—";
-    return String(x);
-  }
-
-  const themeBtn   = document.getElementById("themeBtn");
-  const shareBtn   = document.getElementById("shareBtn");
-  const snipBtn    = document.getElementById("snipBtn");
-  const formEl     = document.getElementById("controls");
-  const tagEl      = document.getElementById("tag");
-  const updatedEl  = document.getElementById("updated");
-  const jsonEl     = document.getElementById("json");
-  const statusEl   = document.getElementById("status");
-  const contentEl  = document.getElementById("content");
-
-  function getPlatform(){
-    const r = document.querySelector("input[name='platform']:checked");
-    return r ? r.value : "psn";
-  }
-
-  const savedTheme = localStorage.getItem("bf6-theme");
-  if (savedTheme === "light") {
-    document.body.classList.add("light");
-    themeBtn.textContent = "Dark";
-  } else {
-    themeBtn.textContent = "Light";
-  }
-
-  themeBtn.addEventListener("click", () => {
-    document.body.classList.toggle("light");
-    const light = document.body.classList.contains("light");
-    themeBtn.textContent = light ? "Dark" : "Light";
-    localStorage.setItem("bf6-theme", light ? "light" : "dark");
-  });
-
-  shareBtn.addEventListener("click", async () => {
-    try {
-      await navigator.clipboard.writeText(location.href);
-      alert("Link copied!");
-    } catch {
-      alert("Could not copy. Please copy from the address bar.");
-    }
-  });
-
-  snipBtn.addEventListener("click", async () => {
-    const wasLight = document.body.classList.contains("light");
-    if (wasLight) {
-      document.body.classList.remove("light");
-    }
-
-    try {
-      const isMobile = window.matchMedia("(max-width: 768px)").matches;
-      const target   = document.getElementById("snip-root");
-
-      const originalCanvas = await html2canvas(target, {
-        useCORS: true,
-        backgroundColor: null,
-        scrollX: 0,
-        scrollY: -window.scrollY,
-        windowWidth:  target.scrollWidth,
-        windowHeight: target.scrollHeight,
-        scale: 2,
-        logging: false
-      });
-
-      let finalCanvas = originalCanvas;
-
-      if (!isMobile) {
-        const slices = 4;
-        const cols   = 2;
-        const rows   = 2;
-        const order  = [0, 2, 1, 3];
-
-        const sliceWidth  = originalCanvas.width;
-        const sliceHeight = originalCanvas.height / slices;
-
-        const cropLeft   = Math.floor(sliceWidth * 0.06);
-        const cropRight  = Math.floor(sliceWidth * 0.06);
-        const cropWidth  = sliceWidth - cropLeft - cropRight;
-
-        const gridCanvas = document.createElement("canvas");
-        gridCanvas.width  = cols * cropWidth;
-        gridCanvas.height = rows * sliceHeight;
-        const ctx = gridCanvas.getContext("2d");
-
-        order.forEach((srcIndex, outIndex) => {
-          const col = outIndex % cols;
-          const row = Math.floor(outIndex / cols);
-
-          const sx = cropLeft;
-          const sy = srcIndex * sliceHeight;
-          const dx = col * cropWidth;
-          const dy = row * sliceHeight;
-
-          ctx.drawImage(
-            originalCanvas,
-            sx, sy,
-            cropWidth, sliceHeight,
-            dx, dy,
-            cropWidth, sliceHeight
-          );
-        });
-
-        finalCanvas = gridCanvas;
-      } else {
-        const slices = 12;
-        const cols   = 4;
-        const rows   = 3;
-
-        const order = [0,3,6,9, 1,4,7,10, 2,5,8,11];
-
-        const sliceWidth  = originalCanvas.width;
-        const sliceHeight = originalCanvas.height / slices;
-
-        const gridCanvas = document.createElement("canvas");
-        gridCanvas.width  = cols * sliceWidth;
-        gridCanvas.height = rows * sliceHeight;
-
-        const ctx = gridCanvas.getContext("2d");
-
-        order.forEach((srcIndex, outIndex) => {
-          if (srcIndex >= slices) return;
-
-          const col = outIndex % cols;
-          const row = Math.floor(outIndex / cols);
-
-          const sx = 0;
-          const sy = srcIndex * sliceHeight;
-          const dx = col * sliceWidth;
-          const dy = row * sliceHeight;
-
-          ctx.drawImage(
-            originalCanvas,
-            sx, sy, sliceWidth, sliceHeight,
-            dx, dy, sliceWidth, sliceHeight
-          );
-        });
-
-        finalCanvas = gridCanvas;
-      }
-
-      finalCanvas.toBlob(async (blob) => {
-        if (!blob) return alert("Failed to produce snip image.");
-
-        try {
-          await navigator.clipboard.write([
-            new ClipboardItem({ "image/png": blob })
-          ]);
-          const t = snipBtn.textContent;
-          snipBtn.textContent = "Snipped!";
-          setTimeout(() => snipBtn.textContent = t, 1200);
-        } catch {
-          const a = document.createElement("a");
-          a.href = URL.createObjectURL(blob);
-          a.download = isMobile ? "bf6-mobile-4x3.png" : "bf6-desktop-2x2.png";
-          a.click();
-        }
-      });
-
-    } catch(err) {
-      console.error(err);
-      alert("Screenshot failed.");
-    } finally {
-      if (wasLight) document.body.classList.add("light");
-    }
-  });
-
-  function renderDashboard(data, platform){
-    const {
-      userName,
-      avatar,
-      rank,
-      rankNum,
-      currentRank,
-      rankImg,
-      rankImage,
-      rankName,
-      bestClass,
-      humanPrecentage,
-      kills,
-      deaths,
-      wins,
-      loses,
-      killsPerMinute,
-      killsPerMatch,
-      headShots,
-      winPercent,
-      headshots,
-      killDeath,
-      infantryKillDeath,
-      timePlayed,
-      accuracy,
-      revives,
-      heals,
-      resupplies,
-      repairs,
-      squadmateRevive,
-      gadgetsDestoyed,
-      playerTakeDowns,
-      matchesPlayed,
-      secondsPlayed,
-      saviorKills,
-      shotsFired,
-      shotsHit,
-      killAssists,
-      vehiclesDestroyed,
-      enemiesSpotted,
-      distanceTraveled,
-      objective,
-      XP,
-      classes = [],
-      weapons = [],
-      weaponGroups = [],
-      vehicles = [],
-      vehicleGroups = [],
-      maps = [],
-      gadgets = [],
-      gamemodes = [],
-      inRound = {}
-    } = data || {};
-
-    const displayRank = rank || rankNum || currentRank;
-    const displayRankImg = rankImg || rankImage || avatar;
-
-    const xpTotal = XP && XP.length ? XP[0].total        : null;
-    const xpPerf  = XP && XP.length ? XP[0].performance  : null;
-    const xpAcc   = XP && XP.length ? XP[0].accolades    : null;
-
-    const topWeapons  = [...weapons].sort((a,b)=> (b.kills||0)-(a.kills||0)).slice(0,8);
-    const topVehicles = [...vehicles].sort((a,b)=> (b.kills||0)-(a.kills||0)).slice(0,6);
-    const mapsSorted  = [...maps].sort((a,b)=> (b.secondsPlayed||0)-(a.secondsPlayed||0));
-
-    const footKm = distanceTraveled ? kmFromUnits(distanceTraveled.foot)      : "—";
-    const vehKm  = distanceTraveled ? kmFromUnits(distanceTraveled.vehicle)   : "—";
-    const passKm = distanceTraveled ? kmFromUnits(distanceTraveled.passenger) : "—";
-
-    const repairToolGadget = gadgets.find(
-      g => g.gadgetName && g.gadgetName.toLowerCase().includes("repair")
-    );
-    const eodGadget = gadgets.find(
-      g => g.gadgetName && g.gadgetName.toLowerCase().includes("eod")
-    );
-    const repairFixes = repairToolGadget ? fmtNum(repairToolGadget.uses)  : "—";
-    const eodKillsVal = eodGadget        ? fmtNum(eodGadget.kills)        : "—";
-
-    contentEl.innerHTML = `
-      <section class="grid md:grid-cols-[2.1fr,1.5fr] gap-3">
-        <div class="card">
-          <div class="flex flex-col items-center gap-3 text-center">
-            <div class="rank-display">
-              <img src="${displayRankImg || ''}" alt="Rank" class="rank-icon">
-              ${displayRank ? `<div class="rank-badge">RANK ${displayRank}</div>` : ''}
-            </div>
-            <div class="text-sm">
-              <div class="text-xs uppercase tracking-[0.18em]" style="color:var(--sub);">PLAYER</div>
-              <div class="text-xl font-bold leading-tight mt-1">${userName || tagEl.value}</div>
-              ${rankName ? `<div class="text-xs mt-1 font-semibold" style="color:var(--bf-accent);">${rankName}</div>` : ''}
-              <div class="text-xs mt-1" style="color:var(--sub);">
-                Platform: <span class="font-semibold">${platform.toUpperCase()}</span>
-                • Best class: <span class="font-semibold">${bestClass || "—"}</span>
-                • Human lobbies: <span class="font-semibold">${fmtPercentString(humanPrecentage)}</span>
-              </div>
-              <div class="text-xs mt-1" style="color:var(--sub);">
-                Time played: <span class="font-semibold">${timePlayed || fmtSeconds(secondsPlayed)}</span>
-                • Matches: <span class="font-semibold">${fmtNum(matchesPlayed)}</span>
-              </div>
-            </div>
-          </div>
-
-          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4">
-            <div>
-              <div class="stat-label">Kills</div>
-              <div class="stat-value">${fmtNum(kills)}</div>
-              <div class="text-xs" style="color:var(--sub);">Deaths: ${fmtNum(deaths)}</div>
-            </div>
-            <div>
-              <div class="stat-label">K/D</div>
-              <div class="stat-value">${fmtFloat(killDeath)}</div>
-              <div class="text-xs" style="color:var(--sub);">Infantry: ${fmtFloat(infantryKillDeath)}</div>
-            </div>
-            <div>
-              <div class="stat-label">KPM</div>
-              <div class="stat-value">${fmtFloat(killsPerMinute)}</div>
-              <div class="text-xs" style="color:var(--sub);">Kills/Match: ${fmtFloat(killsPerMatch)}</div>
-            </div>
-            <div>
-              <div class="stat-label">Accuracy</div>
-              <div class="stat-value">${fmtPercentString(accuracy)}</div>
-              <div class="text-xs" style="color:var(--sub);">
-                Headshots: ${fmtNum(headShots)} (${fmtPercentString(headshots)})
-              </div>
-            </div>
-
-            <div>
-              <div class="stat-label">Win %</div>
-              <div class="stat-value">${fmtPercentString(winPercent)}</div>
-              <div class="text-xs" style="color:var(--sub);">
-                Wins: ${fmtNum(wins)} • Losses: ${fmtNum(loses)}
-              </div>
-            </div>
-            <div>
-              <div class="stat-label">Revives</div>
-              <div class="stat-value">${fmtNum(revives)}</div>
-              <div class="text-xs" style="color:var(--sub);">Squad: ${fmtNum(squadmateRevive)}</div>
-            </div>
-            <div>
-              <div class="stat-label">Repair Fixes</div>
-              <div class="stat-value">${repairFixes}</div>
-              <div class="text-xs" style="color:var(--sub);">
-                From gadget uses (Repair Tool)
-              </div>
-            </div>
-            <div>
-              <div class="stat-label">EOD Kills</div>
-              <div class="stat-value">${eodKillsVal}</div>
-              <div class="text-xs" style="color:var(--sub);">
-                Kills from EOD-type gadget
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="card">
-          <div class="title">Teamplay &amp; Support</div>
-          <div class="grid-auto">
-            <div>
-              <div class="stat-label">Revives</div>
-              <div class="stat-value">${fmtNum(revives)}</div>
-              <div class="text-xs" style="color:var(--sub);">Squad revives: ${fmtNum(squadmateRevive)}</div>
-            </div>
-            <div>
-              <div class="stat-label">Heals / Resupplies</div>
-              <div class="stat-value">${fmtNum(heals)}</div>
-              <div class="text-xs" style="color:var(--sub);">Resupplies: ${fmtNum(resupplies)}</div>
-            </div>
-            <div>
-              <div class="stat-label">Repairs</div>
-              <div class="stat-value">${fmtNum(repairs)}</div>
-              <div class="text-xs" style="color:var(--sub);">Gadgets destroyed: ${fmtNum(gadgetsDestoyed)}</div>
-            </div>
-            <div>
-              <div class="stat-label">Clutch plays</div>
-              <div class="stat-value">${fmtNum(saviorKills)}</div>
-              <div class="text-xs" style="color:var(--sub);">Takedowns: ${fmtNum(playerTakeDowns)}</div>
-            </div>
-          </div>
-          <div class="mt-3 text-xs" style="color:var(--sub);">
-            Last round — Revives: ${fmtNum(inRound.revives)} • Resupplies: ${fmtNum(inRound.resupplies)} •
-            Spot assists: ${fmtNum(inRound.spotAssists)} • Throwables: ${fmtNum(inRound.thrownThrowables)} •
-            Takedowns: ${fmtNum(inRound.playerTakeDowns)}
-          </div>
-        </div>
-      </section>
-
-      <section class="grid md:grid-cols-2 gap-3">
-        <div class="card">
-          <div class="title">Combat Breakdown</div>
-          <div class="grid-auto">
-            <div><span class="stat-label">Kill assists</span><div class="stat-value">${fmtNum(killAssists)}</div></div>
-            <div><span class="stat-label">Enemies spotted</span><div class="stat-value">${fmtNum(enemiesSpotted)}</div></div>
-            <div><span class="stat-label">Vehicles destroyed</span><div class="stat-value">${fmtNum(vehiclesDestroyed)}</div></div>
-            <div><span class="stat-label">Wins / Losses</span><div class="stat-value">${fmtNum(wins)} / ${fmtNum(loses)}</div></div>
-          </div>
-        </div>
-
-        <div class="card">
-          <div class="title">Accuracy &amp; Volume</div>
-          <div class="grid-auto">
-            <div><span class="stat-label">Shots fired</span><div class="stat-value">${fmtNum(shotsFired)}</div></div>
-            <div><span class="stat-label">Shots hit</span><div class="stat-value">${fmtNum(shotsHit)}</div></div>
-            <div><span class="stat-label">Overall accuracy</span><div class="stat-value">${fmtPercentString(accuracy)}</div></div>
-            <div><span class="stat-label">Time played</span><div class="stat-value">${timePlayed || fmtSeconds(secondsPlayed)}</div></div>
-          </div>
-        </div>
-      </section>
-
-      <section class="card">
-        <div class="title">Classes</div>
-        <div class="grid-auto">
-          ${classes.map(c => `
-            <div>
-              <div class="font-semibold mb-1">${c.className}</div>
-              <div class="text-xs" style="color:var(--sub);">
-                Time: ${fmtSeconds(c.secondsPlayed)} • Score: ${fmtNum(c.score)}
-              </div>
-              <div class="text-xs mt-1">
-                Kills: <span class="font-semibold">${fmtNum(c.kills)}</span> •
-                Deaths: <span class="font-semibold">${fmtNum(c.deaths)}</span> •
-                K/D: <span class="font-semibold">${fmtFloat(c.killDeath)}</span> •
-                KPM: <span class="font-semibold">${fmtFloat(c.kpm)}</span>
-              </div>
-              <div class="text-xs" style="color:var(--sub);">
-                Assists: ${fmtNum(c.assists)} • Spawns: ${fmtNum(c.spawns)}
-              </div>
-            </div>
-          `).join("") || `<div class="text-xs" style="color:var(--sub);">No class data.</div>`}
-        </div>
-      </section>
-
-      <section class="grid md:grid-cols-[1.5fr,2fr] gap-3">
-        <div class="card">
-          <div class="title">Weapon Groups</div>
-          <div class="grid-auto">
-            ${weaponGroups.map(g => `
-              <div>
-                <div class="font-semibold mb-1">${g.groupName}</div>
-                <div class="text-xs">
-                  Kills: <span class="font-semibold">${fmtNum(g.kills)}</span> •
-                  KPM: <span class="font-semibold">${fmtFloat(g.killsPerMinute)}</span> •
-                  Accuracy: <span class="font-semibold">${fmtPercentString(g.accuracy)}</span>
-                </div>
-                <div class="text-xs" style="color:var(--sub);">
-                  Headshots: ${fmtNum(g.headshotKills)} (${fmtPercentString(g.headshots)}) •
-                  Damage: ${fmtNum(g.damage)}
-                </div>
-                <div class="text-xs" style="color:var(--sub);">
-                  Time: ${fmtSeconds(g.timeEquipped)} • Spawns: ${fmtNum(g.spawns)}
-                </div>
-              </div>
-            `).join("") || `<div class="text-xs" style="color:var(--sub);">No weapon group data.</div>`}
-          </div>
-        </div>
-
-        <div class="card">
-          <div class="title">Top Weapons</div>
-          <div class="grid-auto">
-            ${topWeapons.map(w => `
-              <div class="flex gap-2">
-                <img src="${w.image}" alt="" class="w-12 h-12 rounded-md object-cover border border-slate-600">
-                <div class="text-xs leading-snug">
-                  <div class="font-semibold">${w.weaponName}</div>
-                  <div style="color:var(--sub);">${w.type}</div>
-                  <div>
-                    Kills: <span class="font-semibold">${fmtNum(w.kills)}</span> •
-                    KPM: <span class="font-semibold">${fmtFloat(w.killsPerMinute)}</span> •
-                    Accuracy: <span class="font-semibold">${fmtPercentString(w.accuracy)}</span>
-                  </div>
-                  <div style="color:var(--sub);">
-                    HS: ${fmtNum(w.headshotKills)} (${fmtPercentString(w.headshots)}) •
-                    Damage: ${fmtNum(w.damage)} • Time: ${fmtSeconds(w.timeEquipped)}
-                  </div>
-                </div>
-              </div>
-            `).join("") || `<div class="text-xs" style="color:var(--sub);">No weapon data.</div>`}
-          </div>
-        </div>
-      </section>
-
-      <section class="grid md:grid-cols-[1.5fr,2fr] gap-3">
-        <div class="card">
-          <div class="title">Vehicle Groups</div>
-          <div class="grid-auto">
-            ${vehicleGroups.map(vg => `
-              <div>
-                <div class="font-semibold mb-1">${vg.groupName}</div>
-                <div class="text-xs">
-                  Kills: <span class="font-semibold">${fmtNum(vg.kills)}</span> •
-                  KPM: <span class="font-semibold">${fmtFloat(vg.killsPerMinute)}</span>
-                </div>
-                <div class="text-xs" style="color:var(--sub);">
-                  Damage: ${fmtNum(vg.damage)} • Spawns: ${fmtNum(vg.spawns)} •
-                  Destroyed: ${fmtNum(vg.destroyed)}
-                </div>
-                <div class="text-xs" style="color:var(--sub);">
-                  Time in: ${fmtSeconds(vg.timeIn)} • Roadkills: ${fmtNum(vg.roadKills)}
-                </div>
-              </div>
-            `).join("") || `<div class="text-xs" style="color:var(--sub);">No vehicle group data.</div>`}
-          </div>
-        </div>
-
-        <div class="card">
-          <div class="title">Top Vehicles</div>
-          <div class="grid-auto">
-            ${topVehicles.map(v => `
-              <div class="flex gap-2">
-                <img src="${v.image}" alt="" class="w-12 h-12 rounded-md object-cover border border-slate-600">
-                <div class="text-xs leading-snug">
-                  <div class="font-semibold">${v.vehicleName}</div>
-                  <div style="color:var(--sub);">${v.type}</div>
-                  <div>
-                    Kills: <span class="font-semibold">${fmtNum(v.kills)}</span> •
-                    KPM: <span class="font-semibold">${fmtFloat(v.killsPerMinute)}</span>
-                  </div>
-                  <div style="color:var(--sub);">
-                    Damage: ${fmtNum(v.damage)} • Destroyed: ${fmtNum(v.destroyed)} •
-                    Time: ${fmtSeconds(v.timeIn)}
-                  </div>
-                </div>
-              </div>
-            `).join("") || `<div class="text-xs" style="color:var(--sub);">No vehicle data.</div>`}
-          </div>
-        </div>
-      </section>
-
-      <section class="grid md:grid-cols-[1.7fr,1.3fr] gap-3">
-        <div class="card">
-          <div class="title">Maps</div>
-          <div class="grid-auto">
-            ${mapsSorted.map(m => `
-              <div class="flex gap-2">
-                <img src="${m.image}" alt="" class="w-12 h-12 rounded-md object-cover border border-slate-600">
-                <div class="text-xs leading-snug">
-                  <div class="font-semibold">${m.mapName}</div>
-                  <div style="color:var(--sub);">
-                    Matches: ${fmtNum(m.matches)} • Wins: ${fmtNum(m.wins)} • Losses: ${fmtNum(m.losses)}
-                  </div>
-                  <div style="color:var(--sub);">
-                    Win rate: ${fmtPercentString(m.winPercent)} • Time: ${fmtSeconds(m.secondsPlayed)}
-                  </div>
-                </div>
-              </div>
-            `).join("") || `<div class="text-xs" style="color:var(--sub);">No map data.</div>`}
-          </div>
-        </div>
-
-        <div class="card">
-          <div class="title">Objectives &amp; Movement</div>
-          <div class="text-xs space-y-2">
-            <div>
-              <span class="font-semibold">Objective time:</span>
-              ${objective && objective.time ? fmtSeconds(objective.time.total) : "—"}
-              <br/>
-              <span style="color:var(--sub);">
-                Attack: ${objective && objective.time ? fmtSeconds(objective.time.attacked) : "—"} •
-                Defend: ${objective && objective.time ? fmtSeconds(objective.time.defended) : "—"}
-              </span>
-            </div>
-            <div>
-              <span class="font-semibold">Flags &amp; bombs:</span>
-              <span style="color:var(--sub);">
-                Armed: ${objective ? fmtNum(objective.armed) : "—"} •
-                Captured: ${objective ? fmtNum(objective.captured) : "—"} •
-                Neutralized: ${objective ? fmtNum(objective.neutralized) : "—"} •
-                Defused: ${objective ? fmtNum(objective.defused) : "—"} •
-                Destroyed: ${objective ? fmtNum(objective.destroyed) : "—"}
-              </span>
-            </div>
-            <div>
-              <span class="font-semibold">Distance travelled:</span>
-              <span style="color:var(--sub);">
-                On foot: ${footKm} • Vehicle: ${vehKm} • Passenger: ${passKm}
-              </span>
-            </div>
-            <div>
-              <span class="font-semibold">XP breakdown:</span>
-              <span style="color:var(--sub);">
-                Total: ${fmtNum(xpTotal)} • Performance: ${fmtNum(xpPerf)} • Accolades: ${fmtNum(xpAcc)}
-              </span>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section class="card">
-        <div class="title">Gadgets</div>
-        <p class="text-xs" style="color:var(--sub);">
-          Detailed BF6 gadget stats (per-gadget breakdown) will auto-populate here once the public API exposes
-          more data. For now, highlights like Repair Fixes and EOD Kills are pulled from gadget usage where available.
-        </p>
-      </section>
-
-      <section class="card">
-        <div class="title">Modes</div>
-        <p class="text-xs" style="color:var(--sub);">
-          Per-mode stats (K/D, W/L and % of total playtime) are not yet exposed in the BF6 public API.
-          This panel will automatically fill when that data becomes available.
-        </p>
-      </section>
-    `;
-  }
-
-  async function loadStats(){
-    const platform = getPlatform();
-    const tag      = (tagEl.value || "").trim() || "notJMODsuspended";
-    const url      = buildApiUrl(platform, tag);
-
-    statusEl.textContent = "Loading…";
-    contentEl.innerHTML  = "";
-    jsonEl.textContent   = "Fetching from " + url;
-
-    try{
-      const res = await fetch(url, { cache:"no-store" });
-      if (!res.ok) {
-        const text = await res.text().catch(()=> "");
-        throw new Error(text || ("HTTP " + res.status));
-      }
-      const data = await res.json();
-      jsonEl.textContent    = JSON.stringify(data, null, 2);
-      updatedEl.textContent = new Date().toLocaleTimeString();
-      statusEl.textContent  = "OK";
-      renderDashboard(data, platform);
-    }catch(err){
-      console.error(err);
-      statusEl.textContent  = "Error";
-      updatedEl.textContent = "—";
-      jsonEl.textContent    = "Error loading from GameTools:\n\n" + (err.message || String(err));
-      contentEl.innerHTML   = `<div class="card text-red-400 text-center">
-           No public stats found for <b>${tag}</b> on ${platform.toUpperCase()}.
-         </div>`;
-    }
-  }
-
-  formEl.addEventListener("submit", (e) => {
-    e.preventDefault();
-    loadStats();
-  });
-
-  const params          = new URLSearchParams(location.search);
-  const defaultTag      = params.get("tag") || "notJMODsuspended";
-  const defaultPlatform = params.get("platform") || "psn";
-
-  tagEl.value = defaultTag;
-  const initialRadio = document.getElementById(defaultPlatform) || document.getElementById("psn");
-  if (initialRadio) initialRadio.checked = true;
-
-  loadStats();
-  </script>
-</body>
+<!DOCTYPE html>  
+<html lang="en">  
+<head>  
+  <meta charset="utf-8" />  
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />  
+  <meta name="theme-color" content="#0b1220">  
+  <title>Jmod's BF6 Stats</title>  
+  <link rel="icon" type="image/png" href="/assets/Signature_WhiteTP.png" />  
+  <script src="https://cdn.tailwindcss.com"></script>  
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>  
+  
+  <style>  
+    :root{  
+      --bf-accent:#ff6a00;  
+      --bg-overlay:rgba(10,18,32,.90);  
+      --card-bg:rgba(255,255,255,.11);  
+      --card-border:rgba(255,255,255,.18);  
+      --text:#f8fafc;  
+      --sub:#e5e7eb;  
+      --title:#93c5fd;  
+      --nav-bg1:rgba(7,11,20,.75);  
+      --nav-bg2:rgba(7,11,20,.35);  
+    }  
+    body.light{  
+      --bg-overlay:rgba(255,255,255,.60);  
+      --card-bg:rgba(0,0,0,.04);  
+      --card-border:rgba(15,23,42,.20);  
+      --text:#0b1220;  
+      --sub:#374151;  
+      --title:#1d4ed8;  
+      --nav-bg1:rgba(255,255,255,.9);  
+      --nav-bg2:rgba(255,255,255,.6);  
+    }  
+    body{  
+      position:relative;  
+      min-height:100vh;  
+      color:var(--text);  
+      background:  
+        linear-gradient(180deg,var(--bg-overlay),var(--bg-overlay)),  
+        url("https://assetsio.gnwcdn.com/battlefield-6-2.jpg?width=690&quality=85&format=jpg&dpr=3&auto=webp")  
+          center/cover no-repeat fixed;  
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,"Helvetica Neue",Arial,"Noto Sans";  
+      transition:all .2s;  
+    }  
+    .jm-watermark{  
+      position:fixed;  
+      inset:0;  
+      background:url("/assets/Signature_BlackTP.png") center/38% auto no-repeat;  
+      opacity:0.5;  
+      pointer-events:none;  
+      z-index:0;  
+    }  
+    .page-shell{ position:relative; z-index:1; }  
+  
+    .card{  
+      background:var(--card-bg);  
+      border:1px solid var(--card-border);  
+      border-radius:16px;  
+      padding:16px;  
+    }  
+    .card-tight{ padding:12px 14px; }  
+  
+    .grid-auto{  
+      display:grid;  
+      grid-template-columns:repeat(auto-fit,minmax(180px,1fr));  
+      gap:10px;  
+    }  
+    .title{  
+      color:var(--title);  
+      font-weight:900;  
+      font-size:1.05rem;  
+      margin-bottom:.5rem;  
+      letter-spacing:.03em;  
+    }  
+  
+    .nav{  
+      backdrop-filter:blur(6px);  
+      background:linear-gradient(180deg,var(--nav-bg1),var(--nav-bg2));  
+      border-bottom:1px solid var(--card-border);  
+    }  
+    .nav .brand{ font-weight:900; letter-spacing:.06em; }  
+    .nav .icon-btn{  
+      background:var(--card-bg);  
+      border:1px solid var(--card-border);  
+      padding:.55rem .9rem;  
+      border-radius:.7rem;  
+      font-weight:700;  
+      color:var(--text);  
+      font-size:.8rem;  
+      cursor:pointer;  
+    }  
+  
+    .chip{  
+      background:var(--card-bg);  
+      border:1px solid var(--card-border);  
+      padding:.4rem .7rem;  
+      border-radius:.7rem;  
+      font-size:.8rem;  
+    }  
+    .btn{  
+      background:var(--bf-accent);  
+      color:#0b0f1a;  
+      font-weight:800;  
+      padding:.7rem 1.4rem;  
+      border-radius:9999px;  
+      min-width:9rem;  
+      cursor:pointer;  
+      border:none;  
+    }  
+    .radio{  
+      appearance:none;  
+      width:22px;  
+      height:22px;  
+      border:2px solid var(--title);  
+      border-radius:9999px;  
+      position:relative;  
+      cursor:pointer;  
+    }  
+    .radio:checked::after{  
+      content:"";  
+      position:absolute;  
+      inset:4px;  
+      border-radius:9999px;  
+      background:var(--title);  
+    }  
+  
+    .stat-label{  
+      font-size:.7rem;  
+      text-transform:uppercase;  
+      letter-spacing:.08em;  
+      color:var(--sub);  
+    }  
+    .stat-value{  
+      font-weight:600;  
+      font-size:1rem;  
+    }  
+  
+    .json-output{  
+      font-family:ui-monospace;  
+      font-size:.78rem;  
+      white-space:pre-wrap;  
+      max-height:420px;  
+      overflow:auto;  
+    }  
+  
+    .rank-display{  
+      position:relative;  
+      display:flex;  
+      flex-direction:column;  
+      align-items:center;  
+      gap:0.5rem;  
+    }  
+    .rank-icon{  
+      width:120px;  
+      height:120px;  
+      object-fit:contain;  
+      filter:drop-shadow(0 4px 12px rgba(255,106,0,0.3));  
+    }  
+    .rank-badge{  
+      background:linear-gradient(135deg, var(--bf-accent), #ff8c00);  
+      color:#0b0f1a;  
+      font-weight:900;  
+      padding:0.4rem 1rem;  
+      border-radius:9999px;  
+      font-size:0.9rem;  
+      letter-spacing:0.05em;  
+      box-shadow:0 2px 8px rgba(255,106,0,0.4);  
+    }  
+  </style>  
+</head>  
+<body class="pb-12">  
+  <div class="jm-watermark"></div>  
+  
+  <div class="page-shell">  
+    <nav class="nav sticky top-0 z-50">  
+      <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">  
+        <a href="https://jordanmoddes.com" target="_blank" class="brand text-lg">JMOD</a>  
+        <div class="flex items-center gap-2">  
+          <a class="icon-btn" href="https://gametools.network/stats" target="_blank">GameTools</a>  
+          <button id="shareBtn" class="icon-btn">Share</button>  
+          <button id="snipBtn" class="icon-btn">Snip</button>  
+          <button id="themeBtn" class="icon-btn">Light</button>  
+        </div>  
+      </div>  
+    </nav>  
+  
+    <header class="text-center mt-6 mb-6 px-4">  
+      <h1 class="text-3xl md:text-4xl font-extrabold tracking-tight" style="color:var(--title)">  
+        Jmod's Battlefield 6 — Stats Dashboard  
+      </h1>  
+      <p class="text-sm" style="color:var(--sub)">  
+        Powered by api.gametools.network/bf6 • Real-time, full detail  
+      </p>  
+    </header>  
+  
+    <form id="controls" class="max-w-6xl mx-auto grid grid-cols-1 gap-3 mb-6 px-4">  
+      <div class="card grid grid-cols-1 md:grid-cols-[1.1fr_auto_1.2fr_auto] gap-3 items-end">  
+        <div>  
+          <div class="text-xs mb-1" style="color:var(--sub);">Platform</div>  
+          <div class="flex flex-wrap items-center gap-3">  
+            <label class="flex items-center gap-2 cursor-pointer chip">  
+              <input class="radio" type="radio" name="platform" value="pc" id="pc">  
+              <span class="font-semibold">PC</span>  
+            </label>  
+            <label class="flex items-center gap-2 cursor-pointer chip">  
+              <input class="radio" type="radio" name="platform" value="psn" id="psn" checked>  
+              <span class="font-semibold">PlayStation</span>  
+            </label>  
+            <label class="flex items-center gap-2 cursor-pointer chip">  
+              <input class="radio" type="radio" name="platform" value="xboxone" id="xboxone">  
+              <span class="font-semibold">Xbox</span>  
+            </label>  
+          </div>  
+        </div>  
+  
+        <div class="flex items-end justify-center">  
+          <button type="submit" class="btn">LOAD</button>  
+        </div>  
+  
+        <div>  
+          <div class="text-xs mb-1" style="color:var(--sub);">Player Tag</div>  
+          <input id="tag" class="w-full rounded-md px-3 py-3 text-slate-900" value="notJMODsuspended">  
+        </div>  
+  
+        <div class="flex items-end justify-start md:justify-end">  
+          <div class="chip text-xs" style="color:var(--sub)">  
+            Last updated: <span id="updated">—</span>  
+          </div>  
+        </div>  
+      </div>  
+    </form>  
+  
+    <div id="snip-root">  
+      <div id="content" class="max-w-6xl mx-auto px-4 space-y-4 text-sm"></div>  
+  
+      <section class="max-w-6xl mx-auto mt-8 px-4">  
+        <div class="card card-tight text-center">  
+          <img src="/assets/Signature_BlackTP.png"  
+               alt="JM"  
+               class="max-w-[160px] w-full opacity-80 mx-auto">  
+          <div style="color:var(--sub);">  
+            Jmod's Battlefield <b>Stat Page</b>  
+          </div>  
+        </div>  
+      </section>  
+    </div>  
+  
+    <section class="max-w-6xl mx-auto mt-4 px-4">  
+      <div class="card card-tight">  
+        <div class="flex justify-between mb-1">  
+          <div class="font-semibold" style="color:var(--title)">Raw GameTools JSON</div>  
+          <div id="status" class="text-xs" style="color:var(--sub)">Idle</div>  
+        </div>  
+        <details>  
+          <summary class="text-xs cursor-pointer" style="color:var(--sub);">  
+            Show / hide raw JSON  
+          </summary>  
+          <pre id="json" class="json-output mt-2" style="color:var(--sub)">No data loaded yet.</pre>  
+        </details>  
+      </div>  
+    </section>  
+  
+    <footer class="text-center text-xs mt-8 px-4" style="color:var(--sub)">  
+      Powered by GameTools BF6 API • Built &amp; styled by Jmod  
+    </footer>  
+  </div>  
+  
+  <script>  
+  function buildApiUrl(platform, name){  
+    const params  = new URLSearchParams({ name, platform, lang: "en-us" });  
+    const realUrl = `https://api.gametools.network/bf6/stats/?${params.toString()}`;  
+    return `https://corsproxy.io/?${encodeURIComponent(realUrl)}`;  
+  }  
+  
+  function fmtNum(x){  
+    if (x === undefined || x === null || isNaN(x)) return "—";  
+    return Number(x).toLocaleString();  
+  }  
+  function fmtFloat(x, digits = 2){  
+    if (x === undefined || x === null || isNaN(x)) return "—";  
+    return Number(x).toFixed(digits);  
+  }  
+  function fmtSeconds(sec){  
+    if (!sec && sec !== 0) return "—";  
+    const s = Number(sec);  
+    const h = Math.floor(s / 3600);  
+    const m = Math.floor((s % 3600) / 60);  
+    if (h === 0 && m === 0) return s + "s";  
+    return h ? `${h}h ${m}m` : `${m}m`;  
+  }  
+  function kmFromUnits(x){  
+    if (!x && x !== 0) return "—";  
+    return (Number(x) / 1000).toFixed(1) + " km";  
+  }  
+  function fmtPercentString(x){  
+    if (x == null) return "—";  
+    return String(x);  
+  }  
+  
+  function calculateRank(xp) {  
+    if (!xp) return null;  
+    const baseXP = 100000;  
+    const rank = Math.floor(xp / baseXP) + 1;  
+    return Math.min(rank, 999);  
+  }  
+  
+  const themeBtn   = document.getElementById("themeBtn");  
+  const shareBtn   = document.getElementById("shareBtn");  
+  const snipBtn    = document.getElementById("snipBtn");  
+  const formEl     = document.getElementById("controls");  
+  const tagEl      = document.getElementById("tag");  
+  const updatedEl  = document.getElementById("updated");  
+  const jsonEl     = document.getElementById("json");  
+  const statusEl   = document.getElementById("status");  
+  const contentEl  = document.getElementById("content");  
+  
+  function getPlatform(){  
+    const r = document.querySelector("input[name='platform']:checked");  
+    return r ? r.value : "psn";  
+  }  
+  
+  const savedTheme = localStorage.getItem("bf6-theme");  
+  if (savedTheme === "light") {  
+    document.body.classList.add("light");  
+    themeBtn.textContent = "Dark";  
+  } else {  
+    themeBtn.textContent = "Light";  
+  }  
+  
+  themeBtn.addEventListener("click", () => {  
+    document.body.classList.toggle("light");  
+    const light = document.body.classList.contains("light");  
+    themeBtn.textContent = light ? "Dark" : "Light";  
+    localStorage.setItem("bf6-theme", light ? "light" : "dark");  
+  });  
+  
+  shareBtn.addEventListener("click", async () => {  
+    try {  
+      await navigator.clipboard.writeText(location.href);  
+      alert("Link copied!");  
+    } catch {  
+      alert("Could not copy. Please copy from the address bar.");  
+    }  
+  });  
+  
+  snipBtn.addEventListener("click", async () => {  
+    const wasLight = document.body.classList.contains("light");  
+    if (wasLight) {  
+      document.body.classList.remove("light");  
+    }  
+  
+    try {  
+      const isMobile = window.matchMedia("(max-width: 768px)").matches;  
+      const target   = document.getElementById("snip-root");  
+  
+      const originalCanvas = await html2canvas(target, {  
+        useCORS: true,  
+        backgroundColor: null,  
+        scrollX: 0,  
+        scrollY: -window.scrollY,  
+        windowWidth:  target.scrollWidth,  
+        windowHeight: target.scrollHeight,  
+        scale: 2,  
+        logging: false  
+      });  
+  
+      let finalCanvas = originalCanvas;  
+  
+      if (!isMobile) {  
+        const slices = 4;  
+        const cols   = 2;  
+        const rows   = 2;  
+        const order  = [0, 2, 1, 3];  
+  
+        const sliceWidth  = originalCanvas.width;  
+        const sliceHeight = originalCanvas.height / slices;  
+  
+        const cropLeft   = Math.floor(sliceWidth * 0.06);  
+        const cropRight  = Math.floor(sliceWidth * 0.06);  
+        const cropWidth  = sliceWidth - cropLeft - cropRight;  
+  
+        const gridCanvas = document.createElement("canvas");  
+        gridCanvas.width  = cols * cropWidth;  
+        gridCanvas.height = rows * sliceHeight;  
+        const ctx = gridCanvas.getContext("2d");  
+  
+        order.forEach((srcIndex, outIndex) => {  
+          const col = outIndex % cols;  
+          const row = Math.floor(outIndex / cols);  
+  
+          const sx = cropLeft;  
+          const sy = srcIndex * sliceHeight;  
+          const dx = col * cropWidth;  
+          const dy = row * sliceHeight;  
+  
+          ctx.drawImage(  
+            originalCanvas,  
+            sx, sy,  
+            cropWidth, sliceHeight,  
+            dx, dy,  
+            cropWidth, sliceHeight  
+          );  
+        });  
+  
+        finalCanvas = gridCanvas;  
+      } else {  
+        const slices = 12;  
+        const cols   = 4;  
+        const rows   = 3;  
+  
+        const order = [0,3,6,9, 1,4,7,10, 2,5,8,11];  
+  
+        const sliceWidth  = originalCanvas.width;  
+        const sliceHeight = originalCanvas.height / slices;  
+  
+        const gridCanvas = document.createElement("canvas");  
+        gridCanvas.width  = cols * sliceWidth;  
+        gridCanvas.height = rows * sliceHeight;  
+  
+        const ctx = gridCanvas.getContext("2d");  
+  
+        order.forEach((srcIndex, outIndex) => {  
+          if (srcIndex >= slices) return;  
+  
+          const col = outIndex % cols;  
+          const row = Math.floor(outIndex / cols);  
+  
+          const sx = 0;  
+          const sy = srcIndex * sliceHeight;  
+          const dx = col * sliceWidth;  
+          const dy = row * sliceHeight;  
+  
+          ctx.drawImage(  
+            originalCanvas,  
+            sx, sy, sliceWidth, sliceHeight,  
+            dx, dy, sliceWidth, sliceHeight  
+          );  
+        });  
+  
+        finalCanvas = gridCanvas;  
+      }  
+  
+      finalCanvas.toBlob(async (blob) => {  
+        if (!blob) return alert("Failed to produce snip image.");  
+  
+        try {  
+          await navigator.clipboard.write([  
+            new ClipboardItem({ "image/png": blob })  
+          ]);  
+          const t = snipBtn.textContent;  
+          snipBtn.textContent = "Snipped!";  
+          setTimeout(() => snipBtn.textContent = t, 1200);  
+        } catch {  
+          const a = document.createElement("a");  
+          a.href = URL.createObjectURL(blob);  
+          a.download = isMobile ? "bf6-mobile-4x3.png" : "bf6-desktop-2x2.png";  
+          a.click();  
+        }  
+      });  
+  
+    } catch(err) {  
+      console.error(err);  
+      alert("Screenshot failed.");  
+    } finally {  
+      if (wasLight) document.body.classList.add("light");  
+    }  
+  });  
+  
+  function renderDashboard(data, platform){  
+    const {  
+      userName,  
+      avatar,  
+      rank,  
+      rankNum,  
+      currentRank,  
+      rankImg,  
+      rankImage,  
+      rankName,  
+      bestClass,  
+      humanPrecentage,  
+      kills,  
+      deaths,  
+      wins,  
+      loses,  
+      killsPerMinute,  
+      killsPerMatch,  
+      headShots,  
+      winPercent,  
+      headshots,  
+      killDeath,  
+      infantryKillDeath,  
+      timePlayed,  
+      accuracy,  
+      revives,  
+      heals,  
+      resupplies,  
+      repairs,  
+      squadmateRevive,  
+      gadgetsDestoyed,  
+      playerTakeDowns,  
+      matchesPlayed,  
+      secondsPlayed,  
+      saviorKills,  
+      shotsFired,  
+      shotsHit,  
+      killAssists,  
+      vehiclesDestroyed,  
+      enemiesSpotted,  
+      distanceTraveled,  
+      objective,  
+      XP,  
+      classes = [],  
+      weapons = [],  
+      weaponGroups = [],  
+      vehicles = [],  
+      vehicleGroups = [],  
+      maps = [],  
+      gadgets = [],  
+      gamemodes = [],  
+      inRound = {}  
+    } = data || {};  
+  
+    const xpTotal = XP && XP.length ? XP[0].total : null;  
+    const calculatedRank = calculateRank(xpTotal);  
+    const displayRank = rank || rankNum || currentRank || calculatedRank;  
+      
+    const classIcons = {  
+      'Assault': 'https://cdn.gametools.network/classes/bf6/white/Assault.svg',  
+      'Engineer': 'https://cdn.gametools.network/classes/bf6/white/Engineer.svg',  
+      'Support': 'https://cdn.gametools.network/classes/bf6/white/Support.svg',  
+      'Recon': 'https://cdn.gametools.network/classes/bf6/white/Recon.svg'  
+    };  
+    const displayRankImg = rankImg || rankImage || classIcons[bestClass] || avatar;  
+  
+    const xpPerf  = XP && XP.length ? XP[0].performance  : null;  
+    const xpAcc   = XP && XP.length ? XP[0].accolades    : null;  
+  
+    const topWeapons  = [...weapons].sort((a,b)=> (b.kills||0)-(a.kills||0)).slice(0,8);  
+    const topVehicles = [...vehicles].sort((a,b)=> (b.kills||0)-(a.kills||0)).slice(0,6);  
+    const mapsSorted  = [...maps].sort((a,b)=> (b.secondsPlayed||0)-(a.secondsPlayed||0));  
+  
+    const footKm = distanceTraveled ? kmFromUnits(distanceTraveled.foot)      : "—";  
+    const vehKm  = distanceTraveled ? kmFromUnits(distanceTraveled.vehicle)   : "—";  
+    const passKm = distanceTraveled ? kmFromUnits(distanceTraveled.passenger) : "—";  
+  
+    const repairToolGadget = gadgets.find(  
+      g => g.gadgetName && g.gadgetName.toLowerCase().includes("repair")  
+    );  
+    const eodGadget = gadgets.find(  
+      g => g.gadgetName && g.gadgetName.toLowerCase().includes("eod")  
+    );  
+    const repairFixes = repairToolGadget ? fmtNum(repairToolGadget.uses)  : "—";  
+    const eodKillsVal = eodGadget        ? fmtNum(eodGadget.kills)        : "—";  
+  
+    contentEl.innerHTML = `  
+      <section class="grid md:grid-cols-[2.1fr,1.5fr] gap-3">  
+        <div class="card">  
+          <div class="flex flex-col items-center gap-3 text-center">  
+            <div class="rank-display">  
+              <img src="${displayRankImg || ''}" alt="Rank" class="rank-icon">  
+              ${displayRank ? `<div class="rank-badge">RANK ${displayRank}</div>` : ''}  
+            </div>  
+            <div class="text-sm">  
+              <div class="text-xs uppercase tracking-[0.18em]" style="color:var(--sub);">PLAYER</div>  
+              <div class="text-xl font-bold leading-tight mt-1">${userName || tagEl.value}</div>  
+              ${rankName ? `<div class="text-xs mt-1 font-semibold" style="color:var(--bf-accent);">${rankName}</div>` : ''}  
+              <div class="text-xs mt-1" style="color:var(--sub);">  
+                Platform: <span class="font-semibold">${platform.toUpperCase()}</span>  
+                • Best class: <span class="font-semibold">${bestClass || "—"}</span>  
+                • Human lobbies: <span class="font-semibold">${fmtPercentString(humanPrecentage)}</span>  
+              </div>  
+              <div class="text-xs mt-1" style="color:var(--sub);">  
+                Time played: <span class="font-semibold">${timePlayed || fmtSeconds(secondsPlayed)}</span>  
+                • Matches: <span class="font-semibold">${fmtNum(matchesPlayed)}</span>  
+              </div>  
+            </div>  
+          </div>  
+  
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4">  
+            <div>  
+              <div class="stat-label">Kills</div>  
+              <div class="stat-value">${fmtNum(kills)}</div>  
+              <div class="text-xs" style="color:var(--sub);">Deaths: ${fmtNum(deaths)}</div>  
+            </div>  
+            <div>  
+              <div class="stat-label">K/D</div>  
+              <div class="stat-value">${fmtFloat(killDeath)}</div>  
+              <div class="text-xs" style="color:var(--sub);">Infantry: ${fmtFloat(infantryKillDeath)}</div>  
+            </div>  
+            <div>  
+              <div class="stat-label">KPM</div>  
+              <div class="stat-value">${fmtFloat(killsPerMinute)}</div>  
+              <div class="text-xs" style="color:var(--sub);">Kills/Match: ${fmtFloat(killsPerMatch)}</div>  
+            </div>  
+            <div>  
+              <div class="stat-label">Accuracy</div>  
+              <div class="stat-value">${fmtPercentString(accuracy)}</div>  
+              <div class="text-xs" style="color:var(--sub);">  
+                Headshots: ${fmtNum(headShots)} (${fmtPercentString(headshots)})  
+              </div>  
+            </div>  
+  
+            <div>  
+              <div class="stat-label">Win %</div>  
+              <div class="stat-value">${fmtPercentString(winPercent)}</div>  
+              <div class="text-xs" style="color:var(--sub);">  
+                Wins: ${fmtNum(wins)} • Losses: ${fmtNum(loses)}  
+              </div>  
+            </div>  
+            <div>  
+              <div class="stat-label">Revives</div>  
+              <div class="stat-value">${fmtNum(revives)}</div>  
+              <div class="text-xs" style="color:var(--sub);">Squad: ${fmtNum(squadmateRevive)}</div>  
+            </div>  
+            <div>  
+              <div class="stat-label">Repair Fixes</div>  
+              <div class="stat-value">${repairFixes}</div>  
+              <div class="text-xs" style="color:var(--sub);">  
+                From gadget uses (Repair Tool)  
+              </div>  
+            </div>  
+            <div>  
+              <div class="stat-label">EOD Kills</div>  
+              <div class="stat-value">${eodKillsVal}</div>  
+              <div class="text-xs" style="color:var(--sub);">  
+                Kills from EOD-type gadget  
+              </div>  
+            </div>  
+          </div>  
+        </div>  
+  
+        <div class="card">  
+          <div class="title">Teamplay &amp; Support</div>  
+          <div class="grid-auto">  
+            <div>  
+              <div class="stat-label">Revives</div>  
+              <div class="stat-value">${fmtNum(revives)}</div>  
+              <div class="text-xs" style="color:var(--sub);">Squad revives: ${fmtNum(squadmateRevive)}</div>  
+            </div>  
+            <div>  
+              <div class="stat-label">Heals / Resupplies</div>  
+              <div class="stat-value">${fmtNum(heals)}</div>  
+              <div class="text-xs" style="color:var(--sub);">Resupplies: ${fmtNum(resupplies)}</div>  
+            </div>  
+            <div>  
+              <div class="stat-label">Repairs</div>  
+              <div class="stat-value">${fmtNum(repairs)}</div>  
+              <div class="text-xs" style="color:var(--sub);">Gadgets destroyed: ${fmtNum(gadgetsDestoyed)}</div>  
+            </div>  
+            <div>  
+              <div class="stat-label">Clutch plays</div>  
+              <div class="stat-value">${fmtNum(saviorKills)}</div>  
+              <div class="text-xs" style="color:var(--sub);">Takedowns: ${fmtNum(playerTakeDowns)}</div>  
+            </div>  
+          </div>  
+          <div class="mt-3 text-xs" style="color:var(--sub);">  
+            Last round — Revives: ${fmtNum(inRound.revives)} • Resupplies: ${fmtNum(inRound.resupplies)} •  
+            Spot assists: ${fmtNum(inRound.spotAssists)} • Throwables: ${fmtNum(inRound.thrownThrowables)} •  
+            Takedowns: ${fmtNum(inRound.playerTakeDowns)}  
+          </div>  
+        </div>  
+      </section>  
+  
+      <section class="grid md:grid-cols-2 gap-3">  
+        <div class="card">  
+          <div class="title">Combat Breakdown</div>  
+          <div class="grid-auto">  
+            <div><span class="stat-label">Kill assists</span><div class="stat-value">${fmtNum(killAssists)}</div></div>  
+            <div><span class="stat-label">Enemies spotted</span><div class="stat-value">${fmtNum(enemiesSpotted)}</div></div>  
+            <div><span class="stat-label">Vehicles destroyed</span><div class="stat-value">${fmtNum(vehiclesDestroyed)}</div></div>  
+            <div><span class="stat-label">Wins / Losses</span><div class="stat-value">${fmtNum(wins)} / ${fmtNum(loses)}</div></div>  
+          </div>  
+        </div>  
+  
+        <div class="card">  
+          <div class="title">Accuracy &amp; Volume</div>  
+          <div class="grid-auto">  
+            <div><span class="stat-label">Shots fired</span><div class="stat-value">${fmtNum(shotsFired)}</div></div>  
+            <div><span class="stat-label">Shots hit</span><div class="stat-value">${fmtNum(shotsHit)}</div></div>  
+            <div><span class="stat-label">Overall accuracy</span><div class="stat-value">${fmtPercentString(accuracy)}</div></div>  
+            <div><span class="stat-label">Time played</span><div class="stat-value">${timePlayed || fmtSeconds(secondsPlayed)}</div></div>  
+          </div>  
+        </div>  
+      </section>  
+  
+      <section class="card">  
+        <div class="title">Classes</div>  
+        <div class="grid-auto">  
+          ${classes.map(c => `  
+            <div>  
+              <div class="font-semibold mb-1">${c.className}</div>  
+              <div class="text-xs" style="color:var(--sub);">  
+                Time: ${fmtSeconds(c.secondsPlayed)} • Score: ${fmtNum(c.score)}  
+              </div>  
+              <div class="text-xs mt-1">  
+                Kills: <span class="font-semibold">${  
+fmtNum(c.kills)}</span> •  
+                Deaths: <span class="font-semibold">${fmtNum(c.deaths)}</span> •  
+                K/D: <span class="font-semibold">${fmtFloat(c.killDeath)}</span> •  
+                KPM: <span class="font-semibold">${fmtFloat(c.kpm)}</span>  
+              </div>  
+              <div class="text-xs" style="color:var(--sub);">  
+                Assists: ${fmtNum(c.assists)} • Spawns: ${fmtNum(c.spawns)}  
+              </div>  
+            </div>  
+          `).join("") || `<div class="text-xs" style="color:var(--sub);">No class data.</div>`}  
+        </div>  
+      </section>  
+  
+      <section class="grid md:grid-cols-[1.5fr,2fr] gap-3">  
+        <div class="card">  
+          <div class="title">Weapon Groups</div>  
+          <div class="grid-auto">  
+            ${weaponGroups.map(g => `  
+              <div>  
+                <div class="font-semibold mb-1">${g.groupName}</div>  
+                <div class="text-xs">  
+                  Kills: <span class="font-semibold">${fmtNum(g.kills)}</span> •  
+                  KPM: <span class="font-semibold">${fmtFloat(g.killsPerMinute)}</span> •  
+                  Accuracy: <span class="font-semibold">${fmtPercentString(g.accuracy)}</span>  
+                </div>  
+                <div class="text-xs" style="color:var(--sub);">  
+                  Headshots: ${fmtNum(g.headshotKills)} (${fmtPercentString(g.headshots)}) •  
+                  Damage: ${fmtNum(g.damage)}  
+                </div>  
+                <div class="text-xs" style="color:var(--sub);">  
+                  Time: ${fmtSeconds(g.timeEquipped)} • Spawns: ${fmtNum(g.spawns)}  
+                </div>  
+              </div>  
+            `).join("") || `<div class="text-xs" style="color:var(--sub);">No weapon group data.</div>`}  
+          </div>  
+        </div>  
+  
+        <div class="card">  
+          <div class="title">Top Weapons</div>  
+          <div class="grid-auto">  
+            ${topWeapons.map(w => `  
+              <div class="flex gap-2">  
+                <img src="${w.image}" alt="" class="w-12 h-12 rounded-md object-cover border border-slate-600">  
+                <div class="text-xs leading-snug">  
+                  <div class="font-semibold">${w.weaponName}</div>  
+                  <div style="color:var(--sub);">${w.type}</div>  
+                  <div>  
+                    Kills: <span class="font-semibold">${fmtNum(w.kills)}</span> •  
+                    KPM: <span class="font-semibold">${fmtFloat(w.killsPerMinute)}</span> •  
+                    Accuracy: <span class="font-semibold">${fmtPercentString(w.accuracy)}</span>  
+                  </div>  
+                  <div style="color:var(--sub);">  
+                    HS: ${fmtNum(w.headshotKills)} (${fmtPercentString(w.headshots)}) •  
+                    Damage: ${fmtNum(w.damage)} • Time: ${fmtSeconds(w.timeEquipped)}  
+                  </div>  
+                </div>  
+              </div>  
+            `).join("") || `<div class="text-xs" style="color:var(--sub);">No weapon data.</div>`}  
+          </div>  
+        </div>  
+      </section>  
+  
+      <section class="grid md:grid-cols-[1.5fr,2fr] gap-3">  
+        <div class="card">  
+          <div class="title">Vehicle Groups</div>  
+          <div class="grid-auto">  
+            ${vehicleGroups.map(vg => `  
+              <div>  
+                <div class="font-semibold mb-1">${vg.groupName}</div>  
+                <div class="text-xs">  
+                  Kills: <span class="font-semibold">${fmtNum(vg.kills)}</span> •  
+                  KPM: <span class="font-semibold">${fmtFloat(vg.killsPerMinute)}</span>  
+                </div>  
+                <div class="text-xs" style="color:var(--sub);">  
+                  Damage: ${fmtNum(vg.damage)} • Spawns: ${fmtNum(vg.spawns)} •  
+                  Destroyed: ${fmtNum(vg.destroyed)}  
+                </div>  
+                <div class="text-xs" style="color:var(--sub);">  
+                  Time in: ${fmtSeconds(vg.timeIn)} • Roadkills: ${fmtNum(vg.roadKills)}  
+                </div>  
+              </div>  
+            `).join("") || `<div class="text-xs" style="color:var(--sub);">No vehicle group data.</div>`}  
+          </div>  
+        </div>  
+  
+        <div class="card">  
+          <div class="title">Top Vehicles</div>  
+          <div class="grid-auto">  
+            ${topVehicles.map(v => `  
+              <div class="flex gap-2">  
+                <img src="${v.image}" alt="" class="w-12 h-12 rounded-md object-cover border border-slate-600">  
+                <div class="text-xs leading-snug">  
+                  <div class="font-semibold">${v.vehicleName}</div>  
+                  <div style="color:var(--sub);">${v.type}</div>  
+                  <div>  
+                    Kills: <span class="font-semibold">${fmtNum(v.kills)}</span> •  
+                    KPM: <span class="font-semibold">${fmtFloat(v.killsPerMinute)}</span>  
+                  </div>  
+                  <div style="color:var(--sub);">  
+                    Damage: ${fmtNum(v.damage)} • Destroyed: ${fmtNum(v.destroyed)} •  
+                    Time: ${fmtSeconds(v.timeIn)}  
+                  </div>  
+                </div>  
+              </div>  
+            `).join("") || `<div class="text-xs" style="color:var(--sub);">No vehicle data.</div>`}  
+          </div>  
+        </div>  
+      </section>  
+  
+      <section class="grid md:grid-cols-[1.7fr,1.3fr] gap-3">  
+        <div class="card">  
+          <div class="title">Maps</div>  
+          <div class="grid-auto">  
+            ${mapsSorted.map(m => `  
+              <div class="flex gap-2">  
+                <img src="${m.image}" alt="" class="w-12 h-12 rounded-md object-cover border border-slate-600">  
+                <div class="text-xs leading-snug">  
+                  <div class="font-semibold">${m.mapName}</div>  
+                  <div style="color:var(--sub);">  
+                    Matches: ${fmtNum(m.matches)} • Wins: ${fmtNum(m.wins)} • Losses: ${fmtNum(m.losses)}  
+                  </div>  
+                  <div style="color:var(--sub);">  
+                    Win rate: ${fmtPercentString(m.winPercent)} • Time: ${fmtSeconds(m.secondsPlayed)}  
+                  </div>  
+                </div>  
+              </div>  
+            `).join("") || `<div class="text-xs" style="color:var(--sub);">No map data.</div>`}  
+          </div>  
+        </div>  
+  
+        <div class="card">  
+          <div class="title">Objectives &amp; Movement</div>  
+          <div class="text-xs space-y-2">  
+            <div>  
+              <span class="font-semibold">Objective time:</span>  
+              ${objective && objective.time ? fmtSeconds(objective.time.total) : "—"}  
+              <br/>  
+              <span style="color:var(--sub);">  
+                Attack: ${objective && objective.time ? fmtSeconds(objective.time.attacked) : "—"} •  
+                Defend: ${objective && objective.time ? fmtSeconds(objective.time.defended) : "—"}  
+              </span>  
+            </div>  
+            <div>  
+              <span class="font-semibold">Flags &amp; bombs:</span>  
+              <span style="color:var(--sub);">  
+                Armed: ${objective ? fmtNum(objective.armed) : "—"} •  
+                Captured: ${objective ? fmtNum(objective.captured) : "—"} •  
+                Neutralized: ${objective ? fmtNum(objective.neutralized) : "—"} •  
+                Defused: ${objective ? fmtNum(objective.defused) : "—"} •  
+                Destroyed: ${objective ? fmtNum(objective.destroyed) : "—"}  
+              </span>  
+            </div>  
+            <div>  
+              <span class="font-semibold">Distance travelled:</span>  
+              <span style="color:var(--sub);">  
+                On foot: ${footKm} • Vehicle: ${vehKm} • Passenger: ${passKm}  
+              </span>  
+            </div>  
+            <div>  
+              <span class="font-semibold">XP breakdown:</span>  
+              <span style="color:var(--sub);">  
+                Total: ${fmtNum(xpTotal)} • Performance: ${fmtNum(xpPerf)} • Accolades: ${fmtNum(xpAcc)}  
+              </span>  
+            </div>  
+          </div>  
+        </div>  
+      </section>  
+  
+      <section class="card">  
+        <div class="title">Gadgets</div>  
+        <p class="text-xs" style="color:var(--sub);">  
+          Detailed BF6 gadget stats (per-gadget breakdown) will auto-populate here once the public API exposes  
+          more data. For now, highlights like Repair Fixes and EOD Kills are pulled from gadget usage where available.  
+        </p>  
+      </section>  
+  
+      <section class="card">  
+        <div class="title">Modes</div>  
+        <p class="text-xs" style="color:var(--sub);">  
+          Per-mode stats (K/D, W/L and % of total playtime) are not yet exposed in the BF6 public API.  
+          This panel will automatically fill when that data becomes available.  
+        </p>  
+      </section>  
+    `;  
+  }  
+  
+  async function loadStats(){  
+    const platform = getPlatform();  
+    const tag      = (tagEl.value || "").trim() || "notJMODsuspended";  
+    const url      = buildApiUrl(platform, tag);  
+  
+    statusEl.textContent = "Loading…";  
+    contentEl.innerHTML  = "";  
+    jsonEl.textContent   = "Fetching from " + url;  
+  
+    try{  
+      const res = await fetch(url, { cache:"no-store" });  
+      if (!res.ok) {  
+        const text = await res.text().catch(()=> "");  
+        throw new Error(text || ("HTTP " + res.status));  
+      }  
+      const data = await res.json();  
+      jsonEl.textContent    = JSON.stringify(data, null, 2);  
+      updatedEl.textContent = new Date().toLocaleTimeString();  
+      statusEl.textContent  = "OK";  
+      renderDashboard(data, platform);  
+    }catch(err){  
+      console.error(err);  
+      statusEl.textContent  = "Error";  
+      updatedEl.textContent = "—";  
+      jsonEl.textContent    = "Error loading from GameTools:\n\n" + (err.message || String(err));  
+      contentEl.innerHTML   = `<div class="card text-red-400 text-center">  
+           No public stats found for <b>${tag}</b> on ${platform.toUpperCase()}.  
+         </div>`;  
+    }  
+  }  
+  
+  formEl.addEventListener("submit", (e) => {  
+    e.preventDefault();  
+    loadStats();  
+  });  
+  
+  const params          = new URLSearchParams(location.search);  
+  const defaultTag      = params.get("tag") || "notJMODsuspended";  
+  const defaultPlatform = params.get("platform") || "psn";  
+  
+  tagEl.value = defaultTag;  
+  const initialRadio = document.getElementById(defaultPlatform) || document.getElementById("psn");  
+  if (initialRadio) initialRadio.checked = true;  
+  
+  loadStats();  
+  </script>  
+</body>  
 </html>
